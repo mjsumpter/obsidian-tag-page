@@ -238,7 +238,7 @@ class TagPageSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 		new Setting(containerEl)
-			.setName('Tag Page Directory')
+			.setName('Tag page directory')
 			.setDesc('The directory in which to create tag pages.')
 			.addText((text) =>
 				text
@@ -254,7 +254,7 @@ class TagPageSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Frontmatter Query Property')
+			.setName('Frontmatter query property')
 			.setDesc(
 				'The frontmatter property to use storing the query tag within the tag page.',
 			)
@@ -268,7 +268,7 @@ class TagPageSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Include Lines')
+			.setName('Include lines')
 			.setDesc('Include lines containing the tag in the tag page.')
 			.addToggle((toggle) =>
 				toggle
@@ -280,7 +280,7 @@ class TagPageSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Bulleted Sub Items')
+			.setName('Bulleted sub-items')
 			.setDesc(
 				'Include bulleted sub-items containing the tag in the tag page.',
 			)
