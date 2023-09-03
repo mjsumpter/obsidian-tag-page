@@ -17,7 +17,6 @@ import {
 import { PluginSettings } from './src/types';
 
 const DEFAULT_SETTINGS: PluginSettings = {
-	mySetting: 'default',
 	tagPageDir: 'Tags/',
 	frontmatterQueryProperty: 'tag-page-query',
 	bulletedSubItems: true,
@@ -30,6 +29,7 @@ export default class TagPagePlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		this.addSettingTab(new TagPageSettingTab(this.app, this));
 
 		this.ribbonIcon = this.addRibbonIcon(
 			'tag-glyph',
@@ -225,7 +225,7 @@ class CreateTagPageModal extends Modal {
 	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class TagPageSettingTab extends PluginSettingTab {
 	plugin: TagPagePlugin;
 
 	constructor(app: App, plugin: TagPagePlugin) {
@@ -237,16 +237,58 @@ class SampleSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc("It's a secret")
+			.setName('Tag Page Directory')
+			.setDesc('The directory in which to create tag pages.')
 			.addText((text) =>
 				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
+					.setValue(this.plugin.settings.tagPageDir)
 					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
+						// add trailing slash if it doesn't exist
+						if (!value.endsWith('/')) {
+							value = `${value}/`;
+						}
+						this.plugin.settings.tagPageDir = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Frontmatter Query Property')
+			.setDesc(
+				'The frontmatter property to use storing the query tag within the tag page.',
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.frontmatterQueryProperty)
+					.onChange(async (value) => {
+						this.plugin.settings.frontmatterQueryProperty = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Include Lines')
+			.setDesc('Include lines containing the tag in the tag page.')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.includeLines)
+					.onChange(async (value) => {
+						this.plugin.settings.includeLines = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Bulleted Sub Items')
+			.setDesc(
+				'Include bulleted sub-items containing the tag in the tag page.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.bulletedSubItems)
+					.onChange(async (value) => {
+						this.plugin.settings.bulletedSubItems = value;
 						await this.plugin.saveSettings();
 					}),
 			);
