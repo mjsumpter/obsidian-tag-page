@@ -9,26 +9,33 @@ import {
 	Setting,
 	TFile,
 } from 'obsidian';
+import { addButton } from './utils/button';
+import { fetchTagData } from './utils/tagSearch';
+import { generateTagPageContent } from './utils/pageContent';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
+export interface PluginSettings {
 	mySetting: string;
 	tagPageDir: string;
+	frontmatterQueryProperty: string;
+	bulletedSubItems?: boolean;
+	includeLines?: boolean;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: PluginSettings = {
 	mySetting: 'default',
 	tagPageDir: 'Tags',
+	frontmatterQueryProperty: 'tage-page-query',
+	bulletedSubItems: true,
+	includeLines: true,
 };
 
-interface TagInfo {
+export interface TagInfo {
 	fileLink: string;
-	bulletContent: string;
+	tagMatches: string[];
 }
 
 export default class TagPagePlugin extends Plugin {
-	settings: MyPluginSettings;
+	settings: PluginSettings;
 
 	async onload() {
 		await this.loadSettings();
@@ -43,41 +50,10 @@ export default class TagPagePlugin extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on('file-open', this.addButton.bind(this)),
+			this.app.workspace.on('file-open', () =>
+				addButton(this.app, this.settings, this.refreshTagPageContent),
+			),
 		);
-	}
-
-	generateTagPageContent(file: TFile) {
-		console.log('Generating tag page content for', file.basename);
-	}
-
-	addButton() {
-		const refreshButtonClass = 'refresh-tag-page-button';
-		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
-		const editorWrapper = activeLeaf?.containerEl.querySelector(
-			'.markdown-source-view',
-		);
-		if (activeLeaf) {
-			const currentFile = activeLeaf.file;
-			if (
-				currentFile &&
-				currentFile.path.includes(this.settings.tagPageDir)
-			) {
-				// Create button
-				const button = document.createElement('button');
-				button.innerText = 'Refresh Page Content';
-				button.classList.add(refreshButtonClass);
-				button.addEventListener('click', async () => {
-					this.generateTagPageContent(currentFile);
-				});
-
-				if (!editorWrapper?.querySelector(refreshButtonClass)) {
-					editorWrapper?.prepend(button);
-				}
-			}
-		} else if (editorWrapper?.querySelector(refreshButtonClass)) {
-			editorWrapper?.querySelector(refreshButtonClass)?.remove();
-		}
 	}
 
 	onunload() {}
@@ -94,6 +70,33 @@ export default class TagPagePlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	async refreshTagPageContent(
+		activeLeaf: MarkdownView,
+		tagOfInterest: string,
+	): Promise<void> {
+		const tagsInfo = await fetchTagData(
+			this.app,
+			this.settings,
+			tagOfInterest,
+		);
+		const tagPageContentString = await generateTagPageContent(
+			this.settings,
+			tagsInfo,
+			tagOfInterest,
+		);
+
+		const editor = activeLeaf?.editor;
+		if (editor) {
+			const currentFile = activeLeaf.file;
+			if (
+				currentFile &&
+				currentFile.path.includes(this.settings.tagPageDir)
+			) {
+				editor.setValue(tagPageContentString);
+			}
+		}
+	}
+
 	async createTagPage(tag: string) {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
@@ -104,79 +107,20 @@ export default class TagPagePlugin extends Plugin {
 		);
 
 		if (!tagPage) {
-			// Search for all pages with this tag
-			const vault = this.app.vault;
-			const allFiles = vault.getMarkdownFiles();
-			const tagInfos: TagInfo[] = [];
-
-			for (const file of allFiles) {
-				const fileContents = await vault.cachedRead(file);
-				const fileLines = fileContents
-					.split('\n')
-					// Remove empty lines
-					.filter((l) => l.trim() !== '');
-
-				let capturingContent = false;
-				let currentBulletIndentation = 0;
-				let currentBulletContent: string[] = [];
-
-				for (const line of fileLines) {
-					// Finds the first non-space character
-					const currentLineIndentation = line.search(/\S/);
-					const validBullet =
-						line.trim().startsWith('- ') &&
-						line.includes(tagOfInterest);
-					const validSubBullet =
-						capturingContent &&
-						currentLineIndentation > currentBulletIndentation;
-
-					switch (true) {
-						case validBullet:
-							// Check if line has bullet point and tag
-							// If we're not inside a bullet, then this is the start of a new bullet
-							capturingContent = true;
-							currentBulletContent.push(line);
-							currentBulletIndentation = currentLineIndentation;
-							break;
-						case validSubBullet:
-							// If we're inside a bullet and the current line has more indentation than the current bullet,
-							// then it's considered a sub-bullet
-							currentBulletContent.push(line);
-							break;
-						case capturingContent:
-							// If we were capturing content but no longer on a valid bullet
-							// then capture the content and reset
-							const tagInfo = {
-								fileLink: `[[${file.basename}|*]]`,
-								bulletContent: currentBulletContent.join('\n'),
-							};
-							tagInfos.push(tagInfo);
-							capturingContent = false;
-							currentBulletContent = [];
-							break;
-						default:
-							break;
-					}
-				}
-			}
-
-			// Generate list of links to files with this tag
-			const tagPageContent: string[] = [];
-			tagPageContent.push(`## Tag Content for ${tagOfInterest}`);
-			tagInfos.forEach((tagInfo) => {
-				const [firstBullet, ...bullets] =
-					tagInfo.bulletContent.split('\n');
-				const firstBulletWithLink = `${firstBullet} ${tagInfo.fileLink}`;
-				tagInfo.bulletContent = [firstBulletWithLink, ...bullets]
-					.join('\n')
-					.replace(tagOfInterest, tagOfInterest.replace('#', ''));
-				tagPageContent.push(tagInfo.bulletContent);
-			});
-			const tagPageContentString = tagPageContent.join('\n');
+			const tagsInfo = await fetchTagData(
+				this.app,
+				this.settings,
+				tagOfInterest,
+			);
+			const tagPageContentString = await generateTagPageContent(
+				this.settings,
+				tagsInfo,
+				tagOfInterest,
+			);
 
 			// if tag page doesn't exist, create it and continue
-			// Check if tag page directory exists
 			await this.app.vault.adapter
+				// Check if tag page directory exists
 				.exists(this.settings.tagPageDir)
 				.then((exists) => {
 					if (!exists) {
