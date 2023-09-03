@@ -156,24 +156,18 @@ export default class TagPagePlugin extends Plugin {
 			);
 
 			// if tag page doesn't exist, create it and continue
-			await this.app.vault.adapter
-				// Check if tag page directory exists
-				.exists(normalizePath(this.settings.tagPageDir))
-				.then((exists) => {
-					if (!exists) {
-						this.app.vault.createFolder(this.settings.tagPageDir);
-					}
-				})
-				.then(() => {
-					return this.app.vault.create(
-						`${this.settings.tagPageDir}${tagOfInterest}.md`,
-						tagPageContentString,
-					);
-				})
-				.then((createdPage) => {
-					// open file
-					this.app.workspace.getLeaf().openFile(createdPage as TFile);
-				});
+			const exists = await this.app.vault.adapter.exists(
+				normalizePath(this.settings.tagPageDir),
+			);
+			if (!exists) {
+				await this.app.vault.createFolder(this.settings.tagPageDir);
+			}
+			const createdPage = await this.app.vault.create(
+				`${this.settings.tagPageDir}${tagOfInterest}.md`,
+				tagPageContentString,
+			);
+
+			await this.app.workspace.getLeaf().openFile(createdPage as TFile);
 		} else {
 			// navigate to tag page
 			await this.app.workspace.getLeaf().openFile(tagPage as TFile);
