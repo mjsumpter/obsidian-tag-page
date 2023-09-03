@@ -1,12 +1,19 @@
-import { App, MarkdownView, Setting } from 'obsidian';
-import { PluginSettings, TagInfo } from '../main';
-import matter from 'gray-matter';
+import { App, MarkdownView, Setting, TFile } from 'obsidian';
+import { PluginSettings, TagInfo } from '../types';
 
-export const generateTagPageContent = async (
+export type GenerateTagPageContentFn = (
+	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo[],
 	tagOfInterest: string,
-): Promise<string> => {
+) => Promise<string>;
+
+export const generateTagPageContent: GenerateTagPageContentFn = async (
+	app,
+	settings,
+	tagsInfo,
+	tagOfInterest,
+) => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 	tagPageContent.push(
@@ -29,7 +36,7 @@ export const generateTagPageContent = async (
 				);
 			} else {
 				tagPageContent.push(
-					`${tagMatch} ${tagInfo.fileLink}`.replace(
+					`- ${tagMatch} ${tagInfo.fileLink}`.replace(
 						tagOfInterest,
 						`**${tagOfInterest.replace('#', '')}**`,
 					),
@@ -37,6 +44,24 @@ export const generateTagPageContent = async (
 			}
 		});
 	});
+
+	// Add Files with tag in frontmatter
+	const filesWithFrontmatterTag = app.vault
+		.getMarkdownFiles()
+		.filter((file) => {
+			const metaMatter =
+				app.metadataCache.getFileCache(file)?.frontmatter;
+			return (
+				metaMatter?.['tags']?.includes(tagOfInterest) ||
+				metaMatter?.['tags']?.includes(tagOfInterest.replace('#', ''))
+			);
+		})
+		.map((file) => `- [[${file.basename}]]`);
+	console.log('filesWithFrontmatter', filesWithFrontmatterTag);
+	if (filesWithFrontmatterTag.length > 0) {
+		tagPageContent.push(`## Files with ${tagOfInterest} in frontmatter`);
+		tagPageContent.push(...filesWithFrontmatterTag);
+	}
 	return tagPageContent.join('\n');
 };
 
@@ -56,4 +81,11 @@ export const extractFrontMatterTagValue = (
 			return;
 		}
 	}
+};
+
+export const swapPageContent = (
+	activeLeaf: MarkdownView | null,
+	newPageContent: string,
+) => {
+	activeLeaf?.currentMode?.set(newPageContent, true);
 };

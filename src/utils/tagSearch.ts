@@ -1,7 +1,6 @@
 import { App, TFile, Vault } from 'obsidian';
-import { PluginSettings, TagInfo } from '../main';
+import { PluginSettings, TagInfo } from '../types';
 
-// Using function to improve readability
 const isIndentationGreater = (line: string, threshold: number): boolean => {
 	return line.search(/\S/) > threshold;
 };
@@ -22,8 +21,9 @@ export const findSmallestUnitsContainingTag = (
 
 	// Regular expression to match the smallest unit containing the substring.
 	// This tries to find sentences (ending with .!?) or lines (ending with \n or being at the start/end of content).
+	// Using a lookbehind (?<=...) to ensure the preceding character is not part of the match.
 	const regex = new RegExp(
-		`(?:^|[\n.!?])${exclusionPattern}[^.!?\\n]*?${escapedSubstring}[^.!?\\n]*?(?:[.!?\\n]|$)`,
+		`(?<=^|[\n.!?])${exclusionPattern}[^.!?\\n]*?${escapedSubstring}[^.!?\\n]*?(?:[.!?\\n]|$)`,
 		'gm',
 	);
 
@@ -145,9 +145,9 @@ export const fetchTagData = async (
 	const vault = app.vault;
 	const allFiles = vault.getMarkdownFiles();
 	const tagInfos = await Promise.all(
-		allFiles.map((file) =>
-			processFile(vault, settings, file, tagOfInterest),
-		),
+		allFiles
+			.filter((file) => !file.path.startsWith(settings.tagPageDir))
+			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => tagInfos.flat());
 
 	return tagInfos;

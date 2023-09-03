@@ -1,44 +1,44 @@
 import {
 	App,
-	Editor,
 	MarkdownView,
 	Modal,
-	Notice,
+	normalizePath,
 	Plugin,
 	PluginSettingTab,
 	Setting,
 	TFile,
 } from 'obsidian';
-import { addButton } from './utils/button';
-import { fetchTagData } from './utils/tagSearch';
-import { generateTagPageContent } from './utils/pageContent';
-
-export interface PluginSettings {
-	mySetting: string;
-	tagPageDir: string;
-	frontmatterQueryProperty: string;
-	bulletedSubItems?: boolean;
-	includeLines?: boolean;
-}
+import { fetchTagData } from './src/utils/tagSearch';
+import {
+	extractFrontMatterTagValue,
+	generateTagPageContent,
+	swapPageContent,
+} from './src/utils/pageContent';
+import { PluginSettings } from './src/types';
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	mySetting: 'default',
-	tagPageDir: 'Tags',
-	frontmatterQueryProperty: 'tage-page-query',
+	tagPageDir: 'Tags/',
+	frontmatterQueryProperty: 'tag-page-query',
 	bulletedSubItems: true,
 	includeLines: true,
 };
 
-export interface TagInfo {
-	fileLink: string;
-	tagMatches: string[];
-}
-
 export default class TagPagePlugin extends Plugin {
 	settings: PluginSettings;
+	ribbonIcon: HTMLElement;
 
 	async onload() {
 		await this.loadSettings();
+
+		this.ribbonIcon = this.addRibbonIcon(
+			'tag-glyph',
+			'Refresh Tag Page',
+			() => {
+				this.refreshTagPageContent();
+			},
+		);
+		this.ribbonIcon.style.display = 'none';
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -51,9 +51,29 @@ export default class TagPagePlugin extends Plugin {
 
 		this.registerEvent(
 			this.app.workspace.on('file-open', () =>
-				addButton(this.app, this.settings, this.refreshTagPageContent),
+				this.updateRibbonIconVisibility(),
 			),
 		);
+
+		this.updateRibbonIconVisibility();
+	}
+
+	updateRibbonIconVisibility() {
+		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeLeaf) {
+			this.ribbonIcon.style.display = 'none';
+			return;
+		}
+		const currentFile = activeLeaf.file;
+
+		if (
+			currentFile &&
+			currentFile.path.startsWith(this.settings.tagPageDir)
+		) {
+			this.ribbonIcon.style.display = 'block';
+		} else {
+			this.ribbonIcon.style.display = 'none';
+		}
 	}
 
 	onunload() {}
@@ -70,31 +90,30 @@ export default class TagPagePlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	async refreshTagPageContent(
-		activeLeaf: MarkdownView,
-		tagOfInterest: string,
-	): Promise<void> {
+	async refreshTagPageContent(): Promise<void> {
+		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeLeaf) return;
+		const tagOfInterest = extractFrontMatterTagValue(
+			this.app,
+			activeLeaf,
+			this.settings.frontmatterQueryProperty,
+		);
+		if (!tagOfInterest) return;
+
 		const tagsInfo = await fetchTagData(
 			this.app,
 			this.settings,
 			tagOfInterest,
 		);
+
 		const tagPageContentString = await generateTagPageContent(
+			this.app,
 			this.settings,
 			tagsInfo,
 			tagOfInterest,
 		);
 
-		const editor = activeLeaf?.editor;
-		if (editor) {
-			const currentFile = activeLeaf.file;
-			if (
-				currentFile &&
-				currentFile.path.includes(this.settings.tagPageDir)
-			) {
-				editor.setValue(tagPageContentString);
-			}
-		}
+		swapPageContent(activeLeaf, tagPageContentString);
 	}
 
 	async createTagPage(tag: string) {
@@ -103,7 +122,7 @@ export default class TagPagePlugin extends Plugin {
 
 		// Create tag page if it doesn't exist
 		const tagPage = this.app.vault.getAbstractFileByPath(
-			`${this.settings.tagPageDir}/${tagOfInterest}.md`,
+			`${this.settings.tagPageDir}${tagOfInterest}.md`,
 		);
 
 		if (!tagPage) {
@@ -113,6 +132,7 @@ export default class TagPagePlugin extends Plugin {
 				tagOfInterest,
 			);
 			const tagPageContentString = await generateTagPageContent(
+				this.app,
 				this.settings,
 				tagsInfo,
 				tagOfInterest,
@@ -121,7 +141,7 @@ export default class TagPagePlugin extends Plugin {
 			// if tag page doesn't exist, create it and continue
 			await this.app.vault.adapter
 				// Check if tag page directory exists
-				.exists(this.settings.tagPageDir)
+				.exists(normalizePath(this.settings.tagPageDir))
 				.then((exists) => {
 					if (!exists) {
 						this.app.vault.createFolder(this.settings.tagPageDir);
@@ -129,7 +149,7 @@ export default class TagPagePlugin extends Plugin {
 				})
 				.then(() => {
 					return this.app.vault.create(
-						`${this.settings.tagPageDir}/${tagOfInterest}.md`,
+						`${this.settings.tagPageDir}${tagOfInterest}.md`,
 						tagPageContentString,
 					);
 				})
@@ -137,11 +157,6 @@ export default class TagPagePlugin extends Plugin {
 					// open file
 					this.app.workspace.getLeaf().openFile(createdPage as TFile);
 				});
-
-			// Get bulleted lines with this tag
-			// Can user's define rules for what lines to include?
-			// Can they grab any subbullets of a bullet
-			// Append to tag page with obsidian link to that page (can I link directly to line?)
 		} else {
 			// navigate to tag page
 			await this.app.workspace.getLeaf().openFile(tagPage as TFile);
