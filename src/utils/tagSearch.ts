@@ -1,18 +1,43 @@
 import { App, TFile, Vault } from 'obsidian';
 import { PluginSettings, TagInfo } from '../types';
 
-const isIndentationGreater = (line: string, threshold: number): boolean => {
+/**
+ * Checks if the indentation of a line is greater than a threshold.
+ *
+ * @param {string} line - The line to check.
+ * @param {number} threshold - The indentation threshold.
+ * @returns {boolean} - Whether the line is indented more than the threshold.
+ */
+export const isIndentationGreater = (
+	line: string,
+	threshold: number,
+): boolean => {
 	return line.search(/\S/) > threshold;
 };
 
-const containsTag = (stringToSearch: string, tag: string): boolean =>
+/**
+ * Checks if a given string contains a specific tag.
+ *
+ * @param {string} stringToSearch - The string to search within.
+ * @param {string} tag - The tag to look for.
+ * @returns {boolean} - Whether the string contains the tag.
+ */
+export const containsTag = (stringToSearch: string, tag: string): boolean =>
 	stringToSearch.includes(tag);
 
+/**
+ * Finds the smallest units (sentences or lines) containing a given tag in a text content.
+ *
+ * @param {string} content - The content to search within.
+ * @param {string} tag - The tag to search for.
+ * @param {boolean} [excludeBullets=false] - Whether to exclude bullet points.
+ * @returns {string[]} - The matching sentences or lines.
+ */
 export const findSmallestUnitsContainingTag = (
 	content: string,
 	tag: string,
 	excludeBullets: boolean = false,
-) => {
+): string[] => {
 	// Escape special characters for use in regex
 	const escapedSubstring = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -38,6 +63,13 @@ export const findSmallestUnitsContainingTag = (
 	return matches.length > 0 ? matches : [];
 };
 
+/**
+ * Finds bullet lists containing a specific tag in a text content.
+ *
+ * @param {string} content - The content to search within.
+ * @param {string} tag - The tag to look for.
+ * @returns {string[]} - The bullet lists containing the tag.
+ */
 export const findBulletListsContainingTag = (
 	content: string,
 	tag: string,
@@ -85,6 +117,15 @@ export const findBulletListsContainingTag = (
 	return capturedBulletLists;
 };
 
+/**
+ * Processes a file to collect information about tags.
+ *
+ * @param {Vault} vault - The Obsidian vault.
+ * @param {PluginSettings} settings - Plugin settings.
+ * @param {TFile} file - The file to process.
+ * @param {string} tagOfInterest - The tag to search for.
+ * @returns {Promise<TagInfo[]>} - Information about the tags found.
+ */
 export const processFile = async (
 	vault: Vault,
 	settings: PluginSettings,
@@ -136,6 +177,14 @@ export const processFile = async (
 	return tagInfos;
 };
 
+/**
+ * Fetches data for a specific tag across all files in a vault.
+ *
+ * @param {App} app - The Obsidian App instance.
+ * @param {PluginSettings} settings - Plugin settings.
+ * @param {string} tagOfInterest - The tag to search for.
+ * @returns {Promise<TagInfo[]>} - Information about the tags found.
+ */
 export const fetchTagData = async (
 	app: App,
 	settings: PluginSettings,
@@ -144,11 +193,9 @@ export const fetchTagData = async (
 	// Search for all pages with this tag
 	const vault = app.vault;
 	const allFiles = vault.getMarkdownFiles();
-	const tagInfos = await Promise.all(
+	return await Promise.all(
 		allFiles
 			.filter((file) => !file.path.startsWith(settings.tagPageDir))
 			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => tagInfos.flat());
-
-	return tagInfos;
 };

@@ -90,6 +90,11 @@ export default class TagPagePlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	/**
+	 * Refreshes the content of the active tag page based on the current settings.
+	 *
+	 * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+	 */
 	async refreshTagPageContent(): Promise<void> {
 		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!activeLeaf) return;
@@ -116,7 +121,13 @@ export default class TagPagePlugin extends Plugin {
 		swapPageContent(activeLeaf, tagPageContentString);
 	}
 
-	async createTagPage(tag: string) {
+	/**
+	 * Creates a new tag page or navigates to an existing one.
+	 *
+	 * @param {string} tag - The tag for which to create or navigate to a page.
+	 * @returns {Promise<void>} - A promise that resolves when the operation is complete.
+	 */
+	async createTagPage(tag: string): Promise<void> {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
 
