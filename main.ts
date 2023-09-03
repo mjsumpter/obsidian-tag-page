@@ -50,6 +50,12 @@ export default class TagPagePlugin extends Plugin {
 		});
 
 		this.registerEvent(
+			this.app.workspace.on('layout-change', () =>
+				this.updateRibbonIconVisibility(),
+			),
+		);
+
+		this.registerEvent(
 			this.app.workspace.on('file-open', () =>
 				this.updateRibbonIconVisibility(),
 			),
