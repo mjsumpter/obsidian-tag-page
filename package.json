@@ -1,6 +1,6 @@
 {
 	"name": "tag-page-md",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "An Obsidian Extension for creating pages to capture all note content with a given tag.",
 	"main": "main.js",
 	"scripts": {
