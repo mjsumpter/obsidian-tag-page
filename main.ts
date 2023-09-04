@@ -15,12 +15,14 @@ import {
 	swapPageContent,
 } from './src/utils/pageContent';
 import { PluginSettings } from './src/types';
+import { isTagPage } from './src/utils/obsidianApi';
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	tagPageDir: 'Tags/',
 	frontmatterQueryProperty: 'tag-page-query',
 	bulletedSubItems: true,
 	includeLines: true,
+	autoRefresh: true,
 };
 
 export default class TagPagePlugin extends Plugin {
@@ -50,35 +52,38 @@ export default class TagPagePlugin extends Plugin {
 		});
 
 		this.registerEvent(
-			this.app.workspace.on('layout-change', () =>
-				this.updateRibbonIconVisibility(),
-			),
+			this.app.workspace.on('layout-change', () => {
+				this.updateRibbonIconVisibility();
+				this.autoRefreshTagPage();
+			}),
 		);
 
 		this.registerEvent(
-			this.app.workspace.on('file-open', () =>
-				this.updateRibbonIconVisibility(),
-			),
+			this.app.workspace.on('file-open', () => {
+				this.updateRibbonIconVisibility();
+				this.autoRefreshTagPage();
+			}),
 		);
 
 		this.updateRibbonIconVisibility();
+		await this.autoRefreshTagPage();
 	}
 
 	updateRibbonIconVisibility() {
-		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeLeaf) {
-			this.ribbonIcon.style.display = 'none';
-			return;
-		}
-		const currentFile = activeLeaf.file;
+		this.ribbonIcon.style.display = isTagPage(
+			this.app,
+			this.settings.tagPageDir,
+		)
+			? 'block'
+			: 'none';
+	}
 
+	async autoRefreshTagPage() {
 		if (
-			currentFile &&
-			currentFile.path.startsWith(this.settings.tagPageDir)
+			this.settings.autoRefresh &&
+			isTagPage(this.app, this.settings.tagPageDir)
 		) {
-			this.ribbonIcon.style.display = 'block';
-		} else {
-			this.ribbonIcon.style.display = 'none';
+			await this.refreshTagPageContent();
 		}
 	}
 
@@ -289,6 +294,20 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.bulletedSubItems)
 					.onChange(async (value) => {
 						this.plugin.settings.bulletedSubItems = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Auto refresh')
+			.setDesc(
+				'Automatically refresh tag pages when they are opened or become active.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoRefresh)
+					.onChange(async (value) => {
+						this.plugin.settings.autoRefresh = value;
 						await this.plugin.saveSettings();
 					}),
 			);

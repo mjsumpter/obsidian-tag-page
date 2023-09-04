@@ -3,6 +3,7 @@ export interface PluginSettings {
 	frontmatterQueryProperty: string;
 	bulletedSubItems: boolean;
 	includeLines: boolean;
+	autoRefresh: boolean;
 }
 
 export interface TagInfo {

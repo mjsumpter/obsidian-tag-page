@@ -76,7 +76,6 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 			);
 		})
 		.map((file) => `- [[${file.basename}]]`);
-	console.log('filesWithFrontmatter', filesWithFrontmatterTag);
 	if (filesWithFrontmatterTag.length > 0) {
 		tagPageContent.push(`## Files with ${tagOfInterest} in frontmatter`);
 		tagPageContent.push(...filesWithFrontmatterTag);
