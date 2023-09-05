@@ -160,6 +160,7 @@ export default class TagPagePlugin extends Plugin {
 				tagOfInterest,
 			);
 
+			const filename = `${tagOfInterest.replace('#', '')}_Tags.md`;
 			// if tag page doesn't exist, create it and continue
 			const exists = await this.app.vault.adapter.exists(
 				normalizePath(this.settings.tagPageDir),
@@ -168,7 +169,7 @@ export default class TagPagePlugin extends Plugin {
 				await this.app.vault.createFolder(this.settings.tagPageDir);
 			}
 			const createdPage = await this.app.vault.create(
-				`${this.settings.tagPageDir}${tagOfInterest}.md`,
+				`${this.settings.tagPageDir}${filename}`,
 				tagPageContentString,
 			);
 
