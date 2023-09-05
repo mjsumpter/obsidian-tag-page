@@ -72,7 +72,7 @@ export default class TagPagePlugin extends Plugin {
 	updateRibbonIconVisibility() {
 		this.ribbonIcon.style.display = isTagPage(
 			this.app,
-			this.settings.tagPageDir,
+			this.settings.frontmatterQueryProperty,
 		)
 			? 'block'
 			: 'none';
@@ -81,7 +81,7 @@ export default class TagPagePlugin extends Plugin {
 	async autoRefreshTagPage() {
 		if (
 			this.settings.autoRefresh &&
-			isTagPage(this.app, this.settings.tagPageDir)
+			isTagPage(this.app, this.settings.frontmatterQueryProperty)
 		) {
 			await this.refreshTagPageContent();
 		}
@@ -261,7 +261,7 @@ class TagPageSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Frontmatter query property')
 			.setDesc(
-				'The frontmatter property to use storing the query tag within the tag page.',
+				'The frontmatter property to use storing the query tag within the tag page. Required for page refresh.',
 			)
 			.addText((text) =>
 				text
