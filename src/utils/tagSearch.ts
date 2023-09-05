@@ -42,7 +42,7 @@ export const findSmallestUnitsContainingTag = (
 	const escapedSubstring = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 	// If excludeBullets is false, don't include the (?!- ) part in the regex.
-	const exclusionPattern = excludeBullets ? '(?!- )' : '';
+	const exclusionPattern = excludeBullets ? '(?!\\s*- )' : '';
 
 	// Regular expression to match the smallest unit containing the substring.
 	// This tries to find sentences (ending with .!?) or lines (ending with \n or being at the start/end of content).
@@ -96,14 +96,22 @@ export const findBulletListsContainingTag = (
 				// Check if line has bullet point and tag
 				// If we're not inside a bullet, then this is the start of a new bullet
 				capturingContent = true;
-				currentBulletContent.push(line);
+				currentBulletContent.push(lineTrim);
 				currentBulletIndentation = line.search(/\S/);
 				break;
 			case capturingContent &&
 				isIndentationGreater(line, currentBulletIndentation):
 				// If we're inside a bullet and the current line has more indentation than the current bullet,
 				// then it's considered a sub-bullet
-				currentBulletContent.push(line);
+
+				// Extract the exact indentation characters (could be spaces or tabs)
+				const indentationCharacters = line.substring(
+					0,
+					line.search(/\S/) - currentBulletIndentation,
+				);
+
+				// Push the sub-bullet with the relative indentation preserved
+				currentBulletContent.push(indentationCharacters + lineTrim);
 				break;
 			case capturingContent:
 				// If we were capturing content but no longer on a valid bullet
@@ -114,6 +122,11 @@ export const findBulletListsContainingTag = (
 				break;
 		}
 	}
+
+	// final check to see if we were capturing content when we reached the end of the file
+	if (capturingContent)
+		capturedBulletLists.push(currentBulletContent.join('\n'));
+
 	return capturedBulletLists;
 };
 
