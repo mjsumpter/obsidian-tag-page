@@ -1,5 +1,6 @@
 import { App, TFile, Vault } from 'obsidian';
 import { PluginSettings, TagInfo } from '../types';
+import { isTagPage } from './obsidianApi';
 
 /**
  * Checks if the indentation of a line is greater than a threshold.
@@ -208,7 +209,15 @@ export const fetchTagData = async (
 	const allFiles = vault.getMarkdownFiles();
 	return await Promise.all(
 		allFiles
-			.filter((file) => !file.path.startsWith(settings.tagPageDir))
+			.filter(
+				(file) =>
+					!isTagPage(
+						app,
+						settings.frontmatterQueryProperty,
+						file,
+						tagOfInterest,
+					),
+			)
 			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => tagInfos.flat());
 };

@@ -28,11 +28,11 @@ export type GenerateTagPageContentFn = (
  * @returns {Promise<string>} - The content to be set in the tag page.
  */
 export const generateTagPageContent: GenerateTagPageContentFn = async (
-	app,
-	settings,
-	tagsInfo,
-	tagOfInterest,
-) => {
+	app: App,
+	settings: PluginSettings,
+	tagsInfo: TagInfo[],
+	tagOfInterest: string,
+): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 	tagPageContent.push(

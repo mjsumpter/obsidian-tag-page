@@ -34,7 +34,8 @@ To install the Obsidian Tag Page Plugin:
 ### Settings
 
 - **Tag Page Directory**: Customize the directory where new tag pages will be created.
-- **Frontmatter Query Property**: Define the frontmatter property to store the tag query within the tag page.
+- **Frontmatter Query Property**: Define the frontmatter property to store the tag query within the tag page. 
+  - **NOTE: This property is required on all tag pages for refreshing content.**
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
 
