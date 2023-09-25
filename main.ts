@@ -35,7 +35,7 @@ export default class TagPagePlugin extends Plugin {
 
 		this.ribbonIcon = this.addRibbonIcon(
 			'tag-glyph',
-			'Refresh Tag Page',
+			'Refresh tag page',
 			() => {
 				this.refreshTagPageContent();
 			},
