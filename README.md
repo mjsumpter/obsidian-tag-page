@@ -45,7 +45,7 @@ To contribute to this project, please clone the GitHub repository and follow the
 
 ## Support
 
-For any issues, please refer to the GitHub [Issues](#) page or contact the maintainers.
+For any issues, please refer to the GitHub [Issues](https://github.com/mjsumpter/obsidian-tag-page/issues) page or contact the maintainers.
 
 ## License
 
