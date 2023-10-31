@@ -17,14 +17,47 @@ export const isIndentationGreater = (
 };
 
 /**
+ * Determines if the given tag contains a wildcard (`/*`) at the end and returns the cleaned tag.
+ *
+ * @param {string} tag - The tag to check for a wildcard.
+ * @returns {Object} An object containing:
+ *  - `isWildCard`: A boolean indicating whether the tag ends with a wildcard.
+ *  - `cleanedTag`: The original tag without the wildcard (if it existed).
+ *
+ * @example
+ * const result = getIsWildCard("#some-tag/*");
+ * // result.isWildCard will be true
+ * // result.cleanedTag will be "#some-tag"
+ */
+export const getIsWildCard = (
+	tag: string,
+): {
+	isWildCard: boolean;
+	cleanedTag: string;
+} => {
+	const isWildCard = tag.endsWith('/*');
+	const cleanedTag = isWildCard ? tag.slice(0, -2) : tag;
+	return { isWildCard, cleanedTag };
+};
+
+/**
  * Checks if a given string contains a specific tag.
  *
  * @param {string} stringToSearch - The string to search within.
  * @param {string} tag - The tag to look for.
  * @returns {boolean} - Whether the string contains the tag.
  */
-export const containsTag = (stringToSearch: string, tag: string): boolean =>
-	stringToSearch.includes(tag);
+export const containsTag = (stringToSearch: string, tag: string): boolean => {
+	const { isWildCard, cleanedTag } = getIsWildCard(tag);
+
+	if (isWildCard) {
+		return stringToSearch.includes(cleanedTag);
+	} else {
+		// Match the tag followed by a single whitespace character
+		const regex = new RegExp(`${cleanedTag}\\s`, 'g');
+		return regex.test(stringToSearch);
+	}
+};
 
 /**
  * Finds the smallest units (sentences or lines) containing a given tag in a text content.
@@ -39,17 +72,21 @@ export const findSmallestUnitsContainingTag = (
 	tag: string,
 	excludeBullets: boolean = false,
 ): string[] => {
+	// Check if tag has the wildcard /* at the end
+	const { isWildCard, cleanedTag } = getIsWildCard(tag);
+
 	// Escape special characters for use in regex
-	const escapedSubstring = tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const escapedSubstring = cleanedTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+	// Add a wildcard pattern if needed
+	const wildcardPattern = isWildCard ? '(?:\\/[^\\s.!?\\n]*)?' : '';
 
 	// If excludeBullets is false, don't include the (?!- ) part in the regex.
 	const exclusionPattern = excludeBullets ? '(?!\\s*- )' : '';
 
 	// Regular expression to match the smallest unit containing the substring.
-	// This tries to find sentences (ending with .!?) or lines (ending with \n or being at the start/end of content).
-	// Using a lookbehind (?<=...) to ensure the preceding character is not part of the match.
 	const regex = new RegExp(
-		`(?<=^|[\n.!?])${exclusionPattern}[^.!?\\n]*?${escapedSubstring}[^.!?\\n]*?(?:[.!?\\n]|$)`,
+		`(?<=^|[\n.!?])${exclusionPattern}[^.!?\\n]*?${escapedSubstring}${wildcardPattern}[^.!?\\n]*?(?:[.!?\\n]|$)`,
 		'gm',
 	);
 
@@ -95,7 +132,7 @@ export const findBulletListsContainingTag = (
 		switch (true) {
 			case startsWithBullet && hasTag:
 				// Check if line has bullet point and tag
-				// If we're not inside a bullet, then this is the start of a new bullet
+				// If we're not inside a bullet sub-tree, then this is the start of a new bullet
 				capturingContent = true;
 				currentBulletContent.push(lineTrim);
 				currentBulletIndentation = line.search(/\S/);
