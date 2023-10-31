@@ -26,6 +26,8 @@ To install the Obsidian Tag Page Plugin:
 ### Commands
 
 - **Create Tag Page**: Trigger this command to create a new tag page or navigate to an existing one.
+  - Entering `#some-tag` will create a new tag page for `#some-tag` in the default tag page directory.
+  - Entering `#some-tag/*` will create a new tag page for all nested tags under `#some-tag` in the default tag page directory.
 
 ### Ribbon Icon
 
