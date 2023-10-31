@@ -43,7 +43,7 @@ To install the Obsidian Tag Page Plugin:
 
 ## Development
 
-To contribute to this project, please see the [Contributing](CONTRIBUTING.md) guidelines. 
+To contribute to this project, please see the [Contributing](https://github.com/mjsumpter/obsidian-tag-page/blob/develop/CONTRIBUTING.md) guidelines. 
 
 ## Support
 
