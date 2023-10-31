@@ -248,12 +248,7 @@ export const fetchTagData = async (
 		allFiles
 			.filter(
 				(file) =>
-					!isTagPage(
-						app,
-						settings.frontmatterQueryProperty,
-						file,
-						tagOfInterest,
-					),
+					!isTagPage(app, settings.frontmatterQueryProperty, file),
 			)
 			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => tagInfos.flat());

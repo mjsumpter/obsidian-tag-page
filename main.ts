@@ -45,7 +45,7 @@ export default class TagPagePlugin extends Plugin {
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'create-tag-page',
-			name: 'Create Tag Page',
+			name: 'Create tag page',
 			callback: () => {
 				new CreateTagPageModal(this.app, this).open();
 			},
