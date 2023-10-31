@@ -8,7 +8,7 @@ import {
 	Setting,
 	TFile,
 } from 'obsidian';
-import { fetchTagData } from './src/utils/tagSearch';
+import { fetchTagData, getIsWildCard } from './src/utils/tagSearch';
 import {
 	extractFrontMatterTagValue,
 	generateTagPageContent,
@@ -141,10 +141,14 @@ export default class TagPagePlugin extends Plugin {
 	async createTagPage(tag: string): Promise<void> {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
+		const { isWildCard, cleanedTag } = getIsWildCard(tagOfInterest);
+		const filename = `${cleanedTag.replace('#', '')}${
+			isWildCard ? '_nested' : ''
+		}_Tags.md`;
 
 		// Create tag page if it doesn't exist
 		const tagPage = this.app.vault.getAbstractFileByPath(
-			`${this.settings.tagPageDir}${tagOfInterest}.md`,
+			`${this.settings.tagPageDir}${filename}`,
 		);
 
 		if (!tagPage) {
@@ -160,7 +164,6 @@ export default class TagPagePlugin extends Plugin {
 				tagOfInterest,
 			);
 
-			const filename = `${tagOfInterest.replace('#', '')}_Tags.md`;
 			// if tag page doesn't exist, create it and continue
 			const exists = await this.app.vault.adapter.exists(
 				normalizePath(this.settings.tagPageDir),
