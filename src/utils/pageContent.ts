@@ -38,7 +38,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	tagPageContent.push(
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
-	tagPageContent.push(`## Tag Content for ${tagOfInterest}`);
+	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
 	tagsInfo.forEach((tagInfo) => {
 		tagInfo.tagMatches.forEach((tagMatch) => {
 			// if tagMatch starts with markdown bullet, add link to first line only
