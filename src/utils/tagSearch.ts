@@ -50,12 +50,16 @@ export const getIsWildCard = (
 export const containsTag = (stringToSearch: string, tag: string): boolean => {
 	const { isWildCard, cleanedTag } = getIsWildCard(tag);
 
+	// Convert both stringToSearch and cleanedTag to the same case
+	const lowerStringToSearch = stringToSearch.toLowerCase();
+	const lowerCleanedTag = cleanedTag.toLowerCase();
+
 	if (isWildCard) {
-		return stringToSearch.includes(cleanedTag);
+		return lowerStringToSearch.includes(lowerCleanedTag);
 	} else {
-		// Match the tag followed by a single whitespace character
-		const regex = new RegExp(`${cleanedTag}\\s`, 'g');
-		return regex.test(stringToSearch);
+		// Use 'i' flag in RegExp for case-insensitive matching
+		const regex = new RegExp(`${lowerCleanedTag}\\s`, 'gi');
+		return regex.test(lowerStringToSearch);
 	}
 };
 
@@ -87,7 +91,7 @@ export const findSmallestUnitsContainingTag = (
 	// Regular expression to match the smallest unit containing the substring.
 	const regex = new RegExp(
 		`(?<=^|[\n.!?])${exclusionPattern}[^.!?\\n]*?${escapedSubstring}${wildcardPattern}[^.!?\\n]*?(?:[.!?\\n]|$)`,
-		'gm',
+		'gmi',
 	);
 
 	const matches: string[] = [];
