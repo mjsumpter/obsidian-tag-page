@@ -38,7 +38,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	tagPageContent.push(
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
-	tagPageContent.push(`## Tag Content for ${tagOfInterest}`);
+	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
 	tagsInfo.forEach((tagInfo) => {
 		tagInfo.tagMatches.forEach((tagMatch) => {
 			// if tagMatch starts with markdown bullet, add link to first line only
@@ -46,12 +46,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 				const [firstBullet, ...bullets] = tagMatch.split('\n');
 				const firstBulletWithLink = `${firstBullet} ${tagInfo.fileLink}`;
 				tagPageContent.push(
-					[firstBulletWithLink, ...bullets]
-						.join('\n')
-						.replace(
-							tagOfInterest,
-							`**${tagOfInterest.replace('#', '')}**`,
-						),
+					[firstBulletWithLink, ...bullets].join('\n'),
 				);
 			} else {
 				tagPageContent.push(
