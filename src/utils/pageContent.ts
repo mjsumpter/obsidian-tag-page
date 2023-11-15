@@ -46,12 +46,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 				const [firstBullet, ...bullets] = tagMatch.split('\n');
 				const firstBulletWithLink = `${firstBullet} ${tagInfo.fileLink}`;
 				tagPageContent.push(
-					[firstBulletWithLink, ...bullets]
-						.join('\n')
-						.replace(
-							tagOfInterest,
-							`**${tagOfInterest.replace('#', '')}**`,
-						),
+					[firstBulletWithLink, ...bullets].join('\n'),
 				);
 			} else {
 				tagPageContent.push(
