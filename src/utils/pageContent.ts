@@ -1,5 +1,6 @@
 import { App, MarkdownView } from 'obsidian';
 import { PluginSettings, TagInfo, TagMatchDetail } from '../types';
+import { getIsWildCard } from './tagSearch';
 
 /**
  * Type definition for a function that generates content for a tag page.
@@ -15,7 +16,7 @@ export type GenerateTagPageContentFn = (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo[],
-	tagOfInterest: string,
+	tagOfInterest: string
 ) => Promise<string>;
 
 /**
@@ -31,12 +32,12 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo[],
-	tagOfInterest: string,
+	tagOfInterest: string
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 	tagPageContent.push(
-		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
+		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`
 	);
 	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
 
@@ -68,18 +69,15 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	const filesWithFrontmatterTag = app.vault
 		.getMarkdownFiles()
 		.filter((file) => {
-			const metaMatter =
-				app.metadataCache.getFileCache(file)?.frontmatter;
-			return (
-				metaMatter?.['tags']?.includes(tagOfInterest) ||
-				metaMatter?.['tags']?.includes(tagOfInterest.replace('#', ''))
-			);
+			const metaMatter = app.metadataCache.getFileCache(file)?.frontmatter;
+			return metaMatter?.tags
+				? matchesTagOfInterest(metaMatter.tags, tagOfInterest)
+				: false;
 		})
 		.map((file) => `- [[${file.basename}]]`);
-	console.log({filesWithFrontmatterTag})
 	if (filesWithFrontmatterTag.length > 0) {
-		console.log('hi')
-		tagPageContent.push(`## Files with ${tagOfInterest} in frontmatter`);
+		const {cleanedTag} = getIsWildCard(tagOfInterest)
+		tagPageContent.push(`## Files with ${cleanedTag} in frontmatter`);
 		tagPageContent.push(...filesWithFrontmatterTag);
 	}
 	return tagPageContent.join('\n');
@@ -96,7 +94,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 export const extractFrontMatterTagValue = (
 	app: App,
 	view: MarkdownView,
-	frontMatterTag: string,
+	frontMatterTag: string
 ): string | undefined => {
 	if (view.file) {
 		try {
@@ -134,7 +132,7 @@ function groupByTagWithDetails(tagInfos: TagInfo[], tagOfInterest: string): Map<
 	tagInfos.forEach(tagInfo => {
 		tagInfo.tagMatches.forEach(stringContainingTag => {
 			// Directly use the tagOfInterest to form the basis of the grouping
-			const regexPattern = tagOfInterest.replace(/[#/]/g, "\\$&") + "(\\w|[-/])*";
+			const regexPattern = tagOfInterest.replace(/[#/]/g, '\\$&') + '(\\w|[-/])*';
 			const regex = new RegExp(regexPattern, 'g');
 
 			const matches = stringContainingTag.match(regex);
@@ -170,18 +168,43 @@ function processTagMatch(fullTag: string, fileLink: string, baseTag: string, tag
 		const [firstBullet, ...bullets] = fullTag.split('\n');
 		const firstBulletWithLink = `${firstBullet} ${fileLink}`;
 		tagPageContent.push(
-			[firstBulletWithLink, ...bullets].join('\n'),
+			[firstBulletWithLink, ...bullets].join('\n')
 		);
 	} else {
 		tagPageContent.push(
 			`- ${fullTag} ${fileLink}`.replace(
 				baseTag,
-				`**${baseTag.replace('#', '')}**`,
-			),
+				`**${baseTag.replace('#', '')}**`
+			)
 		);
 	}
 }
 
+/**
+ * Checks if the provided tags match the tag of interest, including wildcard patterns.
+ *
+ * @param {string | string[]} tags - The tag or tags found in a file's frontmatter.
+ * @param {string} tagOfInterest - The tag to search for, which may include a wildcard pattern (e.g., '#daily-note/*').
+ * @returns {boolean} True if the tag of interest matches (or is matched by) any of the provided tags.
+ */
+function matchesTagOfInterest(tags: string | string[], tagOfInterest: string): boolean {
+	// Normalize tags to an array
+	const normalizedTags = Array.isArray(tags) ? tags : [tags];
+
+	// Prepare base tag and regex pattern for matching
+	const {isWildCard, cleanedTag: tagBase} = getIsWildCard(tagOfInterest);
+
+	// If wildcard, match any tag that starts with the base tag
+	if (isWildCard) {
+		return normalizedTags.some(tag => {
+			const fullTag = `#${tag}`; // Ensure it starts with '#'
+			return fullTag === tagBase || fullTag.startsWith(`${tagBase}/`);
+		});
+	} else {
+		// If not a wildcard, require an exact match
+		return normalizedTags.some(tag => `#${tag}` === tagBase);
+	}
+}
 
 /**
  * Swaps the content of the current page in view with new content.
@@ -191,7 +214,7 @@ function processTagMatch(fullTag: string, fileLink: string, baseTag: string, tag
  */
 export const swapPageContent = (
 	activeLeaf: MarkdownView | null,
-	newPageContent: string,
+	newPageContent: string
 ) => {
 	activeLeaf?.currentMode?.set(newPageContent, true);
 };
