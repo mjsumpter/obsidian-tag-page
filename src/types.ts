@@ -10,3 +10,8 @@ export interface TagInfo {
 	fileLink: string;
 	tagMatches: string[];
 }
+
+export interface TagMatchDetail {
+	stringContainingTag: string;
+	fileLink: string;
+}
