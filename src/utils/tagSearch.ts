@@ -74,7 +74,7 @@ export const containsTag = (stringToSearch: string, tag: string): boolean => {
 export const findSmallestUnitsContainingTag = (
 	content: string,
 	tag: string,
-	excludeBullets: boolean = false,
+	excludeBullets = false,
 ): string[] => {
 	// Check if tag has the wildcard /* at the end
 	const { isWildCard, cleanedTag } = getIsWildCard(tag);
@@ -102,7 +102,7 @@ export const findSmallestUnitsContainingTag = (
 		matches.push(match[0].trim());
 	}
 
-	return matches.length > 0 ? matches : [];
+	return matches;
 };
 
 /**
