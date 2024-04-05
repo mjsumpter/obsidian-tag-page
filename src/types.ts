@@ -6,10 +6,7 @@ export interface PluginSettings {
 	autoRefresh: boolean;
 }
 
-export interface TagInfo {
-	fileLink: string;
-	tagMatches: string[];
-}
+export type TagInfo = Map<string, TagMatchDetail[]>;
 
 export interface TagMatchDetail {
 	stringContainingTag: string;
