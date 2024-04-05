@@ -43,8 +43,14 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 
 	// Check if we have more than one baseTag across all tagInfos
 	if (tagsInfo.size > 1) {
-		// Iterate through each group of tags, adding a subheader for each baseTag
-		tagsInfo.forEach((details, baseTag) => {
+		// Convert the map to an array of [key, value] pairs
+		const sortedTagsInfo = Array.from(tagsInfo).sort((a, b) => {
+			// Sort based on the length of the keys
+			return a[0].length - b[0].length;
+		});
+
+		// Iterate through each group of tags in the sorted order
+		sortedTagsInfo.forEach(([baseTag, details]) => {
 			// Add a subheader for the baseTag
 			tagPageContent.push(`### ${baseTag}`);
 
