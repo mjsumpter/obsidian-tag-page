@@ -84,7 +84,7 @@ export const findSmallestUnitsContainingTag = (
 
 		const matches = [...line.matchAll(regex)];
 		matches.forEach((match) => {
-			let key = match[0];
+			let key = match[0].toLowerCase();
 			// Adjust the key for wildcard matches
 			if (isWildCard && key.endsWith('/*')) {
 				key = key.slice(0, -2);
@@ -165,18 +165,19 @@ export const findBulletListsContainingTag = (
 						isWildCard && match.endsWith('/')
 							? match.slice(0, -1)
 							: match;
-					if (!capturedBulletLists.has(trimmedMatch)) {
-						capturedBulletLists.set(trimmedMatch, []);
+					const trimmedMatchLowerCase = trimmedMatch.toLowerCase();
+					if (!capturedBulletLists.has(trimmedMatchLowerCase)) {
+						capturedBulletLists.set(trimmedMatchLowerCase, []);
 					}
 					capturedBulletLists
-						.get(trimmedMatch)
+						.get(trimmedMatchLowerCase)
 						?.push(
 							lineIndentation > currentBulletIndentation &&
 								capturingSubBullet
 								? line
 								: lineTrim,
 						);
-					lastTagsAtCurrentIndentation.add(trimmedMatch);
+					lastTagsAtCurrentIndentation.add(trimmedMatchLowerCase);
 				});
 			} else if (
 				lineIndentation > currentBulletIndentation &&
