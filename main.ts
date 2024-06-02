@@ -142,7 +142,7 @@ export default class TagPagePlugin extends Plugin {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
 		const { isWildCard, cleanedTag } = getIsWildCard(tagOfInterest);
-		const filename = `${cleanedTag.replace("#", "").replaceAll("/","_")}${
+		const filename = `${cleanedTag.replace('#', '')}${
 			isWildCard ? '_nested' : ''
 		}_Tags.md`;
 
