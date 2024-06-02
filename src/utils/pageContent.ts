@@ -40,6 +40,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
 	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
+	tagPageContent.push(`| Link | Tags/Content |`);
+	tagPageContent.push(`| --- | --- |`);
 
 	// Check if we have more than one baseTag across all tagInfos
 	if (tagsInfo.size > 1) {
@@ -130,10 +132,10 @@ function processTagMatch(
 ) {
 	if (fullTag.trim().startsWith('-')) {
 		const [firstBullet, ...bullets] = fullTag.split('\n');
-		const firstBulletWithLink = `${firstBullet} ${fileLink}`;
+    	const firstBulletWithLink = `| ${fileLink} | ${firstBullet} |`;
 		tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
 	} else {
-		tagPageContent.push(`- ${fullTag} ${fileLink}`);
+		tagPageContent.push(`| ${fileLink} | ${fullTag} |`);
 	}
 }
 
