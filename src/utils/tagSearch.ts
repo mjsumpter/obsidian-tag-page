@@ -255,7 +255,7 @@ export const processFile = async (
 	switch (true) {
 		case settings.bulletedSubItems && settings.includeLines:
 			return consolidateTagInfo(
-				`[[${file.basename}|*]]`,
+				`[[${file.basename}]]`,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
@@ -265,14 +265,14 @@ export const processFile = async (
 			);
 		case settings.bulletedSubItems && !settings.includeLines:
 			return consolidateTagInfo(
-				`[[${file.basename}|*]]`,
+				`[[${file.basename}]]`,
 				undefined,
 				findBulletListsContainingTag(fileContents, tagOfInterest),
 			);
 		case !settings.bulletedSubItems && settings.includeLines:
 		default:
 			return consolidateTagInfo(
-				`[[${file.basename}|*]]`,
+				`[[${file.basename}]]`,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
