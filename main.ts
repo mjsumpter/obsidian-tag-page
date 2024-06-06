@@ -122,14 +122,21 @@ export default class TagPagePlugin extends Plugin {
 			tagOfInterest,
 		);
 
+		if (! activeLeaf.file){
+			return;
+		}
+
+		const baseContent = await this.app.vault.read(activeLeaf.file); 
 		const tagPageContentString = await generateTagPageContent(
 			this.app,
 			this.settings,
 			tagsInfo,
 			tagOfInterest,
+			baseContent
 		);
 
 		swapPageContent(activeLeaf, tagPageContentString);
+		activeLeaf.save()
 	}
 
 	/**

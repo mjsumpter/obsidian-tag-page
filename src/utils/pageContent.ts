@@ -10,6 +10,7 @@ import { getIsWildCard } from './tagSearch';
  * @param {PluginSettings} settings - The plugin settings.
  * @param {TagInfo[]} tagsInfo - Information about tags.
  * @param {string} tagOfInterest - The tag for which the page is being generated.
+ * @param {string} baseContent - The original content of the page
  * @returns {Promise<string>} - The content to be set in the tag page.
  */
 export type GenerateTagPageContentFn = (
@@ -17,8 +18,17 @@ export type GenerateTagPageContentFn = (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
+	baseContent?: string
 ) => Promise<string>;
 
+
+const _parseContent = (baseContent: string): {before: string, after: string} => {
+	const match = baseContent.match(/^(?<frontmatter>---\n.*?\n---\n)?(?:(?<before>.*?)\n)?(?<tagpage>%%\ntag-page-md.*?tag-page-md end\n%%)(?:\n(?<after>.*?))?$/s)
+	if(!match || !match.groups){
+		return {before: '', after: ''}
+	}
+	return {before: match.groups.before ?? '', after: match.groups.after ?? ''};
+}
 /**
  * Generates the content for a tag page.
  *
@@ -26,6 +36,7 @@ export type GenerateTagPageContentFn = (
  * @param {PluginSettings} settings - The plugin settings.
  * @param {TagInfo[]} tagsInfo - Information about tags.
  * @param {string} tagOfInterest - The tag for which the page is being generated.
+ * @param {string} baseContent - The original content of the page
  * @returns {Promise<string>} - The content to be set in the tag page.
  */
 export const generateTagPageContent: GenerateTagPageContentFn = async (
@@ -33,12 +44,22 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
-): Promise<string> => {
+	baseContent = ''
+): Promise<string> => {	
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 	tagPageContent.push(
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
+
+	// Try to extract comments from the page to spot injection placeholder
+	const {before, after} = _parseContent(baseContent)
+
+	if(before){
+		tagPageContent.push(before);
+	}
+	tagPageContent.push('%%\ntag-page-md\n%%');
+
 	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
 
 	// Check if we have more than one baseTag across all tagInfos
@@ -84,6 +105,11 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		const { cleanedTag } = getIsWildCard(tagOfInterest);
 		tagPageContent.push(`## Files with ${cleanedTag} in frontmatter`);
 		tagPageContent.push(...filesWithFrontmatterTag);
+	}
+
+	tagPageContent.push('%%\ntag-page-md end\n%%');
+	if(after){
+		tagPageContent.push(after);
 	}
 	return tagPageContent.join('\n');
 };
