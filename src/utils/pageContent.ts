@@ -18,17 +18,23 @@ export type GenerateTagPageContentFn = (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
-	baseContent?: string
+	baseContent?: string,
 ) => Promise<string>;
 
-
-const _parseContent = (baseContent: string): {before: string, after: string} => {
-	const match = baseContent.match(/^(?<frontmatter>---\n.*?\n---\n)?(?:(?<before>.*?)\n)?(?<tagpage>%%\ntag-page-md.*?tag-page-md end\n%%)(?:\n(?<after>.*?))?$/s)
-	if(!match || !match.groups){
-		return {before: '', after: ''}
+const _parseContent = (
+	baseContent: string,
+): { before: string; after: string } => {
+	const match = baseContent.match(
+		/^(?<frontmatter>---\n.*?\n---\n)?(?:(?<before>.*?)\n)?(?<tagpage>%%\ntag-page-md.*?tag-page-md end\n%%)(?:\n(?<after>.*?))?$/s,
+	);
+	if (!match || !match.groups) {
+		return { before: '', after: '' };
 	}
-	return {before: match.groups.before ?? '', after: match.groups.after ?? ''};
-}
+	return {
+		before: match.groups.before ?? '',
+		after: match.groups.after ?? '',
+	};
+};
 /**
  * Generates the content for a tag page.
  *
@@ -44,8 +50,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
-	baseContent = ''
-): Promise<string> => {	
+	baseContent = '',
+): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 	tagPageContent.push(
@@ -53,9 +59,9 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	);
 
 	// Try to extract comments from the page to spot injection placeholder
-	const {before, after} = _parseContent(baseContent)
+	const { before, after } = _parseContent(baseContent);
 
-	if(before){
+	if (before) {
 		tagPageContent.push(before);
 	}
 	tagPageContent.push('%%\ntag-page-md\n%%\n');
@@ -108,7 +114,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	}
 
 	tagPageContent.push('\n%%\ntag-page-md end\n%%');
-	if(after){
+	if (after) {
 		tagPageContent.push(after);
 	}
 	return tagPageContent.join('\n');
@@ -129,8 +135,9 @@ export const extractFrontMatterTagValue = (
 ): string | undefined => {
 	if (view.file) {
 		try {
-			const metaMatter = app.metadataCache.getFileCache(view.file)
-				?.frontmatter;
+			const metaMatter = app.metadataCache.getFileCache(
+				view.file,
+			)?.frontmatter;
 
 			return metaMatter?.[frontMatterTag];
 		} catch (err) {
