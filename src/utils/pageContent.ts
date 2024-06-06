@@ -40,8 +40,6 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
 	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
-	tagPageContent.push(`| Link | Tags/Content |`);
-	tagPageContent.push(`| --- | --- |`);
 
 	// Check if we have more than one baseTag across all tagInfos
 	if (tagsInfo.size > 1) {
@@ -55,7 +53,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		sortedTagsInfo.forEach(([baseTag, details]) => {
 			// Add a subheader for the baseTag
 			tagPageContent.push(`### ${baseTag}`);
-
+			tagPageContent.push(`| Link | Tags/Content |`);
+			tagPageContent.push(`| --- | --- |`);
 			// Process each tagMatch detail in this group
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				processTagMatch(stringContainingTag, fileLink, tagPageContent);
@@ -63,6 +62,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		});
 	} else {
 		// If there's only one baseTag, process all tagMatches normally without subheaders
+		tagPageContent.push(`| Link | Tags/Content |`);
+		tagPageContent.push(`| --- | --- |`);
 		tagsInfo.forEach((details) => {
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				// Assuming there's only one baseTag, we can directly use the first (and only) key of groupedTags
