@@ -58,7 +58,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	if(before){
 		tagPageContent.push(before);
 	}
-	tagPageContent.push('%%\ntag-page-md\n%%');
+	tagPageContent.push('%%\ntag-page-md\n%%\n');
 
 	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
 
@@ -107,7 +107,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		tagPageContent.push(...filesWithFrontmatterTag);
 	}
 
-	tagPageContent.push('%%\ntag-page-md end\n%%');
+	tagPageContent.push('\n%%\ntag-page-md end\n%%');
 	if(after){
 		tagPageContent.push(after);
 	}
