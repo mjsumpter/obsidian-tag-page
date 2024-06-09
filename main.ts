@@ -125,6 +125,12 @@ export default class TagPagePlugin extends Plugin {
 		if (!activeLeaf.file) {
 			return;
 		}
+		
+		this.app.fileManager.processFrontMatter(activeLeaf.file, frontMatter => {
+			frontMatter[this.settings.frontmatterQueryProperty] = tagOfInterest
+			frontMatter.tags ??= [];
+			frontMatter.tags = [...new Set(frontMatter.tags).add('tag-page-md').add(tagOfInterest.slice(1) /* Omit the leading # */)]
+		})
 
 		const baseContent = await this.app.vault.read(activeLeaf.file);
 		const tagPageContentString = await generateTagPageContent(
