@@ -178,3 +178,21 @@ export const swapPageContent = (
 ) => {
 	activeLeaf?.currentMode?.set(newPageContent, true);
 };
+
+/**
+ * Generates a filename based on the cleaned tag, wild card status, and settings.
+ *
+ * @param {string} cleanedTag - The tag to be cleaned and formatted.
+ * @param {boolean} isWildCard - Indicates whether a wildcard is present.
+ * @param {string} nestedSeparator - The separator to use for nested structures.
+ * @returns {string} The generated filename.
+ */
+export const generateFilename = (
+	cleanedTag: string,
+	isWildCard: boolean,
+	nestedSeparator: string,
+): string => {
+	return `${cleanedTag.replace('#', '').replaceAll('/', nestedSeparator)}${
+		isWildCard ? nestedSeparator + 'nested' : ''
+	}${nestedSeparator}Tags.md`;
+};
