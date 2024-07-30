@@ -11,6 +11,7 @@ import {
 import { fetchTagData, getIsWildCard } from './src/utils/tagSearch';
 import {
 	extractFrontMatterTagValue,
+	generateFilename,
 	generateTagPageContent,
 	swapPageContent,
 } from './src/utils/pageContent';
@@ -143,8 +144,11 @@ export default class TagPagePlugin extends Plugin {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
 		const { isWildCard, cleanedTag } = getIsWildCard(tagOfInterest);
-		const filename = `${cleanedTag.replace("#", "").replaceAll("/", this.settings.nestedSeparator)}${isWildCard ? this.settings.nestedSeparator + 'nested' : ''
-			}` + this.settings.nestedSeparator + `Tags.md`;
+		const filename = generateFilename(
+			cleanedTag,
+			isWildCard,
+			this.settings.nestedSeparator,
+		);
 
 		// Create tag page if it doesn't exist
 		const tagPage = this.app.vault.getAbstractFileByPath(
