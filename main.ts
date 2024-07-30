@@ -20,6 +20,7 @@ import { isTagPage } from './src/utils/obsidianApi';
 const DEFAULT_SETTINGS: PluginSettings = {
 	tagPageDir: 'Tags/',
 	frontmatterQueryProperty: 'tag-page-query',
+	nestedSeparator: '_',
 	bulletedSubItems: true,
 	includeLines: true,
 	autoRefresh: true,
@@ -142,9 +143,8 @@ export default class TagPagePlugin extends Plugin {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
 		const { isWildCard, cleanedTag } = getIsWildCard(tagOfInterest);
-		const filename = `${cleanedTag.replace('#', '')}${
-			isWildCard ? '_nested' : ''
-		}_Tags.md`;
+		const filename = `${cleanedTag.replace("#", "").replaceAll("/", this.settings.nestedSeparator)}${isWildCard ? this.settings.nestedSeparator + 'nested' : ''
+			}` + this.settings.nestedSeparator + `Tags.md`;
 
 		// Create tag page if it doesn't exist
 		const tagPage = this.app.vault.getAbstractFileByPath(
@@ -275,7 +275,19 @@ class TagPageSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-
+		new Setting(containerEl)
+			.setName('Nested page separator')
+			.setDesc(
+				"Text used to separate levels for nested tags. Avoid \\/<>:\"|?* and other characters that aren't file-safe, or you won't be able to make pages for nested tags.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.nestedSeparator)
+					.onChange(async (value) => {
+						this.plugin.settings.nestedSeparator = value;
+						await this.plugin.saveSettings();
+					}),
+			);
 		new Setting(containerEl)
 			.setName('Include lines')
 			.setDesc('Include lines containing the tag in the tag page.')
