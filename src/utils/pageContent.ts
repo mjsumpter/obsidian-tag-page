@@ -53,7 +53,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		sortedTagsInfo.forEach(([baseTag, details]) => {
 			// Add a subheader for the baseTag
 			tagPageContent.push(`### ${baseTag}`);
-
+			tagPageContent.push(`| Link | Tags/Content |`);
+			tagPageContent.push(`| --- | --- |`);
 			// Process each tagMatch detail in this group
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				processTagMatch(stringContainingTag, fileLink, tagPageContent);
@@ -61,6 +62,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		});
 	} else {
 		// If there's only one baseTag, process all tagMatches normally without subheaders
+		tagPageContent.push(`| Link | Tags/Content |`);
+		tagPageContent.push(`| --- | --- |`);
 		tagsInfo.forEach((details) => {
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				// Assuming there's only one baseTag, we can directly use the first (and only) key of groupedTags
@@ -130,10 +133,10 @@ function processTagMatch(
 ) {
 	if (fullTag.trim().startsWith('-')) {
 		const [firstBullet, ...bullets] = fullTag.split('\n');
-		const firstBulletWithLink = `${firstBullet} ${fileLink}`;
+    	const firstBulletWithLink = `| ${fileLink} | ${firstBullet} |`;
 		tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
 	} else {
-		tagPageContent.push(`- ${fullTag} ${fileLink}`);
+		tagPageContent.push(`| ${fileLink} | ${fullTag} |`);
 	}
 }
 
