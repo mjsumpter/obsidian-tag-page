@@ -38,8 +38,11 @@ To install the Obsidian Tag Page Plugin:
 - **Tag Page Directory**: Customize the directory where new tag pages will be created.
 - **Frontmatter Query Property**: Define the frontmatter property to store the tag query within the tag page. 
   - **NOTE: This property is required on all tag pages for refreshing content.**
+- **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
+   - _Example_: `mytag_nested.md`
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
+- **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
 
 ## Development
 

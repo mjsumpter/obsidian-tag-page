@@ -25,6 +25,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 	bulletedSubItems: true,
 	includeLines: true,
 	autoRefresh: true,
+	fullLinkName: false,
 };
 
 export default class TagPagePlugin extends Plugin {
@@ -328,6 +329,19 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.autoRefresh)
 					.onChange(async (value) => {
 						this.plugin.settings.autoRefresh = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName('Display full link name as reference')
+			.setDesc(
+				'Each bit of pulled content will display the full link title as a reference as an end of line. Displays * when false.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.fullLinkName)
+					.onChange(async (value) => {
+						this.plugin.settings.fullLinkName = value;
 						await this.plugin.saveSettings();
 					}),
 			);
