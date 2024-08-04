@@ -252,10 +252,13 @@ export const processFile = async (
 	const fileContents = await vault.cachedRead(file);
 	if (!containsTag(fileContents, tagOfInterest)) return new Map();
 
+	const fileLink = settings.fullLinkName
+		? `[[${file.basename}]]`
+		: `[[${file.basename}|*]]`;
 	switch (true) {
 		case settings.bulletedSubItems && settings.includeLines:
 			return consolidateTagInfo(
-        `[[${file.basename}]]`,
+				fileLink,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
@@ -265,14 +268,14 @@ export const processFile = async (
 			);
 		case settings.bulletedSubItems && !settings.includeLines:
 			return consolidateTagInfo(
-				`[[${file.basename}]]`,
+				fileLink,
 				undefined,
 				findBulletListsContainingTag(fileContents, tagOfInterest),
 			);
 		case !settings.bulletedSubItems && settings.includeLines:
 		default:
 			return consolidateTagInfo(
-				`[[${file.basename}]]`,
+				fileLink,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
