@@ -1,5 +1,5 @@
 import { App, TFile, Vault } from 'obsidian';
-import { PluginSettings, TagInfo } from '../types';
+import { PluginSettings, SortOrder, TagInfo } from '../types';
 import { isTagPage } from './obsidianApi';
 
 /**
@@ -199,13 +199,13 @@ export const findBulletListsContainingTag = (
  * handling cases where either, both, or none of the sources are provided.
  * Each TagMatchDetail contains a string containing the tag and a file link.
  *
- * @param {string} fileLink - The file link to be associated with each tag match.
+ * @param {{fileLink: string; timestamp:number}} fileInfo - The file link to be associated with each tag match.
  * @param {Map<string, string[]>?} unitsContainingTag - Optional. The map of tags to strings from findSmallestUnitsContainingTag.
  * @param {Map<string, string[]>?} bulletListsContainingTag - Optional. The map of tags to bullet lists from findBulletListsContainingTag.
  * @returns {TagInfo} A map of tags to arrays of TagMatchDetail objects.
  */
 function consolidateTagInfo(
-	fileLink: string,
+	fileInfo: { fileLink: string; timestamp: number },
 	unitsContainingTag?: Map<string, string[]>,
 	bulletListsContainingTag?: Map<string, string[]>,
 ): TagInfo {
@@ -215,8 +215,8 @@ function consolidateTagInfo(
 	const addMatchesToConsolidatedInfo = (tag: string, matches: string[]) => {
 		const existingMatches = consolidatedInfo.get(tag) || [];
 		const newMatches = matches.map((matchString) => ({
+			...fileInfo,
 			stringContainingTag: matchString,
-			fileLink: fileLink,
 		}));
 		consolidatedInfo.set(tag, existingMatches.concat(newMatches));
 	};
@@ -255,10 +255,15 @@ export const processFile = async (
 	const fileLink = settings.fullLinkName
 		? `[[${file.basename}]]`
 		: `[[${file.basename}|*]]`;
+
+	const fileInfo = {
+		fileLink,
+		timestamp: file.stat.ctime,
+	};
 	switch (true) {
 		case settings.bulletedSubItems && settings.includeLines:
 			return consolidateTagInfo(
-				fileLink,
+				fileInfo,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
@@ -268,14 +273,14 @@ export const processFile = async (
 			);
 		case settings.bulletedSubItems && !settings.includeLines:
 			return consolidateTagInfo(
-				fileLink,
+				fileInfo,
 				undefined,
 				findBulletListsContainingTag(fileContents, tagOfInterest),
 			);
 		case !settings.bulletedSubItems && settings.includeLines:
 		default:
 			return consolidateTagInfo(
-				fileLink,
+				fileInfo,
 				findSmallestUnitsContainingTag(
 					fileContents,
 					tagOfInterest,
@@ -316,7 +321,15 @@ export const fetchTagData = async (
 			tagInfo.forEach((details, tag) => {
 				// Ensure existingDetails is never undefined by providing a default value if the key doesn't exist
 				const existingDetails = consolidatedTagInfo.get(tag) || [];
-				consolidatedTagInfo.set(tag, existingDetails.concat(details));
+				const combinedDetails = existingDetails.concat(details);
+
+				// Sort by timestamp
+				if (settings.sortByDate === SortOrder.DESC) {
+					combinedDetails.sort((a, b) => b.timestamp - a.timestamp);
+				} else {
+					combinedDetails.sort((a, b) => a.timestamp - b.timestamp);
+				}
+				consolidatedTagInfo.set(tag, combinedDetails);
 			});
 		});
 

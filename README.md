@@ -38,6 +38,7 @@ To install the Obsidian Tag Page Plugin:
 - **Tag Page Directory**: Customize the directory where new tag pages will be created.
 - **Frontmatter Query Property**: Define the frontmatter property to store the tag query within the tag page. 
   - **NOTE: This property is required on all tag pages for refreshing content.**
+- **Sort By Date**: Sorts content by creation date. Defaults to descending (newest content first)
 - **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
    - _Example_: `mytag_nested.md`
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
