@@ -15,12 +15,13 @@ import {
 	generateTagPageContent,
 	swapPageContent,
 } from './src/utils/pageContent';
-import { PluginSettings } from './src/types';
+import { PluginSettings, SortOrder } from './src/types';
 import { isTagPage } from './src/utils/obsidianApi';
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	tagPageDir: 'Tags/',
 	frontmatterQueryProperty: 'tag-page-query',
+	sortByDate: SortOrder.DESC,
 	nestedSeparator: '_',
 	bulletedSubItems: true,
 	includeLines: true,
@@ -277,6 +278,21 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.frontmatterQueryProperty)
 					.onChange(async (value) => {
 						this.plugin.settings.frontmatterQueryProperty = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName('Sort content by Date')
+			.setDesc(
+				'Designate whether the content should be sorted in descending or ascending order. Defaults to descending (newest content first).',
+			)
+			.addDropdown((component) =>
+				component
+					.addOption(SortOrder.DESC, 'Descending')
+					.addOption(SortOrder.ASC, 'Ascending')
+					.setValue(SortOrder.DESC)
+					.onChange(async (value) => {
+						this.plugin.settings.sortByDate = value as SortOrder;
 						await this.plugin.saveSettings();
 					}),
 			);
