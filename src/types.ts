@@ -8,6 +8,7 @@ export interface PluginSettings {
 	frontmatterQueryProperty: string;
 	sortByDate: SortOrder;
 	nestedSeparator: string;
+	tagPageTitleTemplate: string;
 	bulletedSubItems: boolean;
 	includeLines: boolean;
 	autoRefresh: boolean;
