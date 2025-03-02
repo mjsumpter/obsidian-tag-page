@@ -215,6 +215,6 @@ export const resolveTagPageTitle = (
 	} else {
 		const tag = `${tagOfInterest.replace('*', '')}`;
 		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#','');
-		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', tag).replaceAll('{{tagname}}', tagName);
+		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', ' ' + tag).replaceAll('{{tagname}}', tagName).replaceAll('  ', ' ');
 	}
 }
