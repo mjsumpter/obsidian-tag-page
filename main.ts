@@ -313,7 +313,7 @@ class TagPageSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Tag page title template')
 			.setDesc(
-				'Title template for the tag page. The placeholder \'{{tag}}\' will be replaced by the actual tag. The placeholder \'{{tagname}}\' will be replaced just by the tag name (without # and link). The placeholder \'{{lf}}\' (line feed) is used to add new lines, for optional spacing or to add a static text between the title and the tags.'
+				'Title template for the tag page. The placeholder \'{{tag}}\' will be replaced by the actual tag. The placeholder \'{{tagname}}\' will be replaced by just the tag name (without the \'#\' symbol and without a link). The placeholder \'{{lf}}\' (line feed) is used to add new lines for optional spacing or to insert static text between the title and the tags.'
 			)
 			.addText((text) =>
 				text
