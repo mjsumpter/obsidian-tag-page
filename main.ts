@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 	frontmatterQueryProperty: 'tag-page-query',
 	sortByDate: SortOrder.DESC,
 	nestedSeparator: '_',
+	tagPageTitleTemplate: 'Tag Content for {{tag}}',
 	bulletedSubItems: true,
 	includeLines: true,
 	autoRefresh: true,
@@ -308,6 +309,19 @@ class TagPageSettingTab extends PluginSettingTab {
 						this.plugin.settings.nestedSeparator = value;
 						await this.plugin.saveSettings();
 					}),
+			);
+		new Setting(containerEl)
+			.setName('Tag page title template')
+			.setDesc(
+				'Title template for the tag page. The placeholder \'{{tag}}\' will be replaced by the actual tag. The placeholder \'{{tagname}}\' will be replaced by just the tag name (without the \'#\' symbol and without a link). The placeholder \'{{lf}}\' (line feed) is used to add new lines for optional spacing or to insert static text between the title and the tags.'
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.tagPageTitleTemplate)
+					.onChange(async (value) => {
+						this.plugin.settings.tagPageTitleTemplate = value;
+						await this.plugin.saveSettings();
+					})
 			);
 		new Setting(containerEl)
 			.setName('Include lines')

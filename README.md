@@ -41,6 +41,10 @@ To install the Obsidian Tag Page Plugin:
 - **Sort By Date**: Sorts content by creation date. Defaults to descending (newest content first)
 - **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
    - _Example_: `mytag_nested.md`
+- **Tag page title template**: Template for the titles of the tag pages. If left empty, a default title will be generated: `Tag Content for {{tag}}`.There are three (case sensitive) placeholders available:
+   - `{{tag}}`: Will by replaced by the actual tag with a link (e.g. `#Birds`).
+   - `{{tagname}}`: Will be replaced by the tag name without the `#` symbol and without a link (e.g. `Birds` if the tag is `#Birds`).
+   - `{{lf}}`: Will be replaced by a newline (line feed). With this placeholder, you can add spacing or static text between the title and the tags.
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
 - **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.

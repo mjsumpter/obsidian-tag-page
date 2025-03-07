@@ -39,7 +39,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	tagPageContent.push(
 		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
 	);
-	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
+	// Resolve the title and push to the page content
+	tagPageContent.push(resolveTagPageTitle(settings, tagOfInterest));
 
 	// Check if we have more than one baseTag across all tagInfos
 	if (tagsInfo.size > 1) {
@@ -196,3 +197,24 @@ export const generateFilename = (
 		isWildCard ? nestedSeparator + 'nested' : ''
 	}${nestedSeparator}Tags.md`;
 };
+
+/**
+ * Resolves the title of the tag page according to the defined template in the settings. 
+ * If empty, the default title will be generated. The template variable {{tag}} will be replaced by the full tag, and {{tagname}} will be replaced just with the tag name. {{lf}} will create new lines.
+ * @param {PluginSettings} settings - The plugin settings.
+ * @param {string} tagOfInterest - The tag for which the page is being generated.
+ * @returns The resolved page title
+ */
+export const resolveTagPageTitle = (
+	settings: PluginSettings,
+	tagOfInterest: string,
+): string => {
+	const template = settings.tagPageTitleTemplate;
+	if (!template) {
+		return `## Tag Content for ${tagOfInterest.replace('*', '')}`;
+	} else {
+		const tag = `${tagOfInterest.replace('*', '')}`;
+		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#','');
+		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', ' ' + tag).replaceAll('{{tagname}}', tagName).replaceAll('  ', ' ');
+	}
+}
