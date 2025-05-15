@@ -18,22 +18,43 @@ export type GenerateTagPageContentFn = (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
-	baseContent?: string,
+	previousContent?: string,
 ) => Promise<string>;
 
-const _parseContent = (
-	baseContent: string,
+/**
+ * Extracts the user-defined before & after content from the tag page
+ * 
+ * @example ```ts
+ * _parseTagPageContent(`Hello world
+ * %%
+ * tag-page-md
+ * %%
+ * ## Files with foo in frontmatter
+ * ...
+ * %%
+ * tag-page-md end
+ * %%
+ * Goodby world`) // {before: 'Hello world', after: 'Goodby world'}
+ * ```
+ * @param content - The page content to parse
+ * @returns - The user-defined content before/after.
+ */
+const _parseContentRegions = (
+	content?: string,
 ) => {
-	const match = baseContent.match(
+	if (!content) {
+		return { frontmatter: null, before: null, after: null }
+	}
+	const match = content.match(
 		/^(?<frontmatter>---\n.*?\n---\n)?(?:(?<before>.*?)\n)?(?<tagpage>%%\ntag-page-md.*?tag-page-md end\n%%)(?:\n(?<after>.*?))?$/s,
 	);
 	if (!match || !match.groups) {
-		return { frontmatter: '', before: '', after: '' };
+		return { frontmatter: null, before: null, after: null };
 	}
 	return {
-		frontmatter: match.groups.frontmatter ?? '',
-		before: match.groups.before ?? '',
-		after: match.groups.after ?? '',
+		frontmatter: match.groups.frontmatter,
+		before: match.groups.before,
+		after: match.groups.after,
 	};
 };
 /**
@@ -43,7 +64,7 @@ const _parseContent = (
  * @param {PluginSettings} settings - The plugin settings.
  * @param {TagInfo[]} tagsInfo - Information about tags.
  * @param {string} tagOfInterest - The tag for which the page is being generated.
- * @param {string} baseContent - The original content of the page
+ * @param {string} previousContent - The original content of the page
  * @returns {Promise<string>} - The content to be set in the tag page.
  */
 export const generateTagPageContent: GenerateTagPageContentFn = async (
@@ -51,13 +72,13 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
 	tagOfInterest: string,
-	baseContent = '',
+	previousContent?: string,
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
 
 	// Try to extract comments from the page to spot injection placeholder
-	const { frontmatter, before: userContentBefore, after: userContentAfter } = _parseContent(baseContent);
+	const { frontmatter, before: userContentBefore, after: userContentAfter } = _parseContentRegions(previousContent);
 
 	if(frontmatter){
 		tagPageContent.push(frontmatter);
