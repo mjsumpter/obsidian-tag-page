@@ -57,18 +57,23 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	const tagPageContent: string[] = [];
 
 	// Try to extract comments from the page to spot injection placeholder
-	const { frontmatter, before, after } = _parseContent(baseContent);
+	const { frontmatter, before: userContentBefore, after: userContentAfter } = _parseContent(baseContent);
 
 	if(frontmatter){
 		tagPageContent.push(frontmatter);
+	} else {
+		tagPageContent.push(
+			`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
+		);
 	}
 
-	if (before) {
-		tagPageContent.push(before);
+	if (userContentBefore) {
+		tagPageContent.push(userContentBefore);
 	}
 	tagPageContent.push('%%\ntag-page-md\n%%\n');
-
-	tagPageContent.push(`## Tag Content for ${tagOfInterest.replace('*', '')}`);
+	
+	// Resolve the title and push to the page content
+	tagPageContent.push(resolveTagPageTitle(settings, tagOfInterest));
 
 	// Check if we have more than one baseTag across all tagInfos
 	if (tagsInfo.size > 1) {
@@ -116,8 +121,8 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	}
 
 	tagPageContent.push('\n%%\ntag-page-md end\n%%');
-	if (after) {
-		tagPageContent.push(after);
+	if (userContentAfter) {
+		tagPageContent.push(userContentAfter);
 	}
 	return tagPageContent.join('\n');
 };
@@ -213,3 +218,42 @@ export const swapPageContent = (
 ) => {
 	activeLeaf?.currentMode?.set(newPageContent, true);
 };
+
+/**
+ * Generates a filename based on the cleaned tag, wild card status, and settings.
+ *
+ * @param {string} cleanedTag - The tag to be cleaned and formatted.
+ * @param {boolean} isWildCard - Indicates whether a wildcard is present.
+ * @param {string} nestedSeparator - The separator to use for nested structures.
+ * @returns {string} The generated filename.
+ */
+export const generateFilename = (
+	cleanedTag: string,
+	isWildCard: boolean,
+	nestedSeparator: string,
+): string => {
+	return `${cleanedTag.replace('#', '').replaceAll('/', nestedSeparator)}${
+		isWildCard ? nestedSeparator + 'nested' : ''
+	}${nestedSeparator}Tags.md`;
+};
+
+/**
+ * Resolves the title of the tag page according to the defined template in the settings. 
+ * If empty, the default title will be generated. The template variable {{tag}} will be replaced by the full tag, and {{tagname}} will be replaced just with the tag name. {{lf}} will create new lines.
+ * @param {PluginSettings} settings - The plugin settings.
+ * @param {string} tagOfInterest - The tag for which the page is being generated.
+ * @returns The resolved page title
+ */
+export const resolveTagPageTitle = (
+	settings: PluginSettings,
+	tagOfInterest: string,
+): string => {
+	const template = settings.tagPageTitleTemplate;
+	if (!template) {
+		return `## Tag Content for ${tagOfInterest.replace('*', '')}`;
+	} else {
+		const tag = `${tagOfInterest.replace('*', '')}`;
+		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#','');
+		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', ' ' + tag).replaceAll('{{tagname}}', tagName).replaceAll('  ', ' ');
+	}
+}

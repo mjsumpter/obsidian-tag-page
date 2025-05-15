@@ -11,18 +11,23 @@ import {
 import { fetchTagData, getIsWildCard } from './src/utils/tagSearch';
 import {
 	extractFrontMatterTagValue,
+	generateFilename,
 	generateTagPageContent,
 	swapPageContent,
 } from './src/utils/pageContent';
-import { PluginSettings } from './src/types';
+import { PluginSettings, SortOrder } from './src/types';
 import { isTagPage } from './src/utils/obsidianApi';
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	tagPageDir: 'Tags/',
 	frontmatterQueryProperty: 'tag-page-query',
+	sortByDate: SortOrder.DESC,
+	nestedSeparator: '_',
+	tagPageTitleTemplate: 'Tag Content for {{tag}}',
 	bulletedSubItems: true,
 	includeLines: true,
 	autoRefresh: true,
+	fullLinkName: false,
 };
 
 export default class TagPagePlugin extends Plugin {
@@ -155,9 +160,11 @@ export default class TagPagePlugin extends Plugin {
 		// Append # to tag if it doesn't exist
 		const tagOfInterest = tag.startsWith('#') ? tag : `#${tag}`;
 		const { isWildCard, cleanedTag } = getIsWildCard(tagOfInterest);
-		const filename = `${cleanedTag.replace('#', '')}${
-			isWildCard ? '_nested' : ''
-		}_Tags.md`;
+		const filename = generateFilename(
+			cleanedTag,
+			isWildCard,
+			this.settings.nestedSeparator,
+		);
 
 		// Create tag page if it doesn't exist
 		const tagPage = this.app.vault.getAbstractFileByPath(
@@ -288,7 +295,47 @@ class TagPageSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-
+		new Setting(containerEl)
+			.setName('Sort content by Date')
+			.setDesc(
+				'Designate whether the content should be sorted in descending or ascending order. Defaults to descending (newest content first).',
+			)
+			.addDropdown((component) =>
+				component
+					.addOption(SortOrder.DESC, 'Descending')
+					.addOption(SortOrder.ASC, 'Ascending')
+					.setValue(SortOrder.DESC)
+					.onChange(async (value) => {
+						this.plugin.settings.sortByDate = value as SortOrder;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName('Nested page separator')
+			.setDesc(
+				"Text used to separate levels for nested tags. Avoid \\/<>:\"|?* and other characters that aren't file-safe, or you won't be able to make pages for nested tags.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.nestedSeparator)
+					.onChange(async (value) => {
+						this.plugin.settings.nestedSeparator = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName('Tag page title template')
+			.setDesc(
+				'Title template for the tag page. The placeholder \'{{tag}}\' will be replaced by the actual tag. The placeholder \'{{tagname}}\' will be replaced by just the tag name (without the \'#\' symbol and without a link). The placeholder \'{{lf}}\' (line feed) is used to add new lines for optional spacing or to insert static text between the title and the tags.'
+			)
+			.addText((text) =>
+				text
+					.setValue(this.plugin.settings.tagPageTitleTemplate)
+					.onChange(async (value) => {
+						this.plugin.settings.tagPageTitleTemplate = value;
+						await this.plugin.saveSettings();
+					})
+			);
 		new Setting(containerEl)
 			.setName('Include lines')
 			.setDesc('Include lines containing the tag in the tag page.')
@@ -325,6 +372,19 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.autoRefresh)
 					.onChange(async (value) => {
 						this.plugin.settings.autoRefresh = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName('Display full link name as reference')
+			.setDesc(
+				'Each bit of pulled content will display the full link title as a reference as an end of line. Displays * when false.',
+			)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.fullLinkName)
+					.onChange(async (value) => {
+						this.plugin.settings.fullLinkName = value;
 						await this.plugin.saveSettings();
 					}),
 			);
