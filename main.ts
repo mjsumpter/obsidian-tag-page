@@ -127,17 +127,24 @@ export default class TagPagePlugin extends Plugin {
 			tagOfInterest,
 		);
 
+		// Tag pages are stored in files, so this should never be null.
 		if (!activeLeaf.file) {
 			return;
 		}
+		console.log(tagOfInterest);
 		
-		this.app.fileManager.processFrontMatter(activeLeaf.file, frontMatter => {
+		// Create or update the front matter
+		await this.app.fileManager.processFrontMatter(activeLeaf.file, frontMatter => {
+			console.dir(frontMatter)
 			frontMatter[this.settings.frontmatterQueryProperty] = tagOfInterest
-			frontMatter.tags ??= [];
-			frontMatter.tags = [...new Set(frontMatter.tags).add('tag-page-md').add(tagOfInterest.slice(1) /* Omit the leading # */)]
+			const updatedTags = new Set<string>(frontMatter.tags);
+			updatedTags.add('tag-page-md');
+			// `tagOfInterest` is for example `#category`
+			updatedTags.add(tagOfInterest.replace(/^#/, ''))
+			frontMatter.tags = [...updatedTags]
 		})
-
 		const baseContent = await this.app.vault.read(activeLeaf.file);
+		
 		const tagPageContentString = await generateTagPageContent(
 			this.app,
 			this.settings,
