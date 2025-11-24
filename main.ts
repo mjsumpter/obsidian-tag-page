@@ -56,6 +56,14 @@ export default class TagPagePlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: 'refresh-tag-page',
+			name: 'Refresh tag page',
+			callback: () => {
+				this.refreshTagPageContent();
+			},
+		});
+
 		this.registerEvent(
 			this.app.workspace.on('layout-change', () => {
 				this.updateRibbonIconVisibility();
