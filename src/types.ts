@@ -5,14 +5,13 @@ export enum SortOrder {
 
 export interface PluginSettings {
 	tagPageDir: string;
-	frontmatterQueryProperty: string;
 	sortByDate: SortOrder;
 	nestedSeparator: string;
 	tagPageTitleTemplate: string;
 	bulletedSubItems: boolean;
 	includeLines: boolean;
-	autoRefresh: boolean;
 	fullLinkName: boolean;
+	linkAtEnd: boolean;
 }
 
 export type TagInfo = Map<string, TagMatchDetail[]>;

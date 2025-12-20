@@ -1,6 +1,5 @@
 import { App, TFile, Vault } from 'obsidian';
 import { PluginSettings, SortOrder, TagInfo } from '../types';
-import { isTagPage } from './obsidianApi';
 
 /**
  * Determines if the given tag contains a wildcard (`/*`) at the end and returns the cleaned tag.
@@ -39,12 +38,14 @@ export const containsTag = (stringToSearch: string, tag: string): boolean => {
 	// Convert both stringToSearch and cleanedTag to the same case
 	const lowerStringToSearch = stringToSearch.toLowerCase();
 	const lowerCleanedTag = cleanedTag.toLowerCase();
+	const escapedTag = lowerCleanedTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 	if (isWildCard) {
 		return lowerStringToSearch.includes(lowerCleanedTag);
 	} else {
-		// Use 'i' flag in RegExp for case-insensitive matching
-		const regex = new RegExp(`${lowerCleanedTag}\\s`, 'gi');
+		// Match the tag when followed by whitespace, punctuation, or end of line
+		const boundaryLookahead = '(?=$|\\s|[.,;:!?\"\'`<>()\\[\\]{}_-])';
+		const regex = new RegExp(`${escapedTag}${boundaryLookahead}`, 'i');
 		return regex.test(lowerStringToSearch);
 	}
 };
@@ -70,7 +71,8 @@ export const findSmallestUnitsContainingTag = (
 ): Map<string, string[]> => {
 	const { isWildCard, cleanedTag } = getIsWildCard(tag);
 	const escapedSubstring = cleanedTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const wildcardPattern = isWildCard ? '(?:\\/[^\\s]*)?' : '';
+	// Allow arbitrarily nested segments when searching wildcards (e.g., #tag/a/b/c)
+	const wildcardPattern = isWildCard ? '(?:\\/[\\S]+)*' : '';
 
 	// Filter out bullet points early if excludeBullets is true
 	const contentLines = content
@@ -144,7 +146,7 @@ export const findBulletListsContainingTag = (
 			// Adjusted to use a more inclusive regex pattern for wildcard matches.
 			// Also captures the base tag for wildcard searches.
 			const tagRegex = isWildCard
-				? `${cleanedTag}(/[^\\s]+)?`
+				? `${cleanedTag}(?:/[^\\s]+)*`
 				: `${cleanedTag}(?![^\\s])`;
 			const regex = new RegExp(tagRegex, 'gi');
 			const matches = line.match(regex);
@@ -307,12 +309,12 @@ export const fetchTagData = async (
 	// Search for all pages with this tag
 	const vault = app.vault;
 	const allFiles = vault.getMarkdownFiles();
+	const tagDirPrefix = settings.tagPageDir.endsWith('/')
+		? settings.tagPageDir
+		: `${settings.tagPageDir}/`;
 	return await Promise.all(
 		allFiles
-			.filter(
-				(file) =>
-					!isTagPage(app, settings.frontmatterQueryProperty, file),
-			)
+			.filter((file) => !file.path.startsWith(tagDirPrefix))
 			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => {
 		const consolidatedTagInfo: TagInfo = new Map();

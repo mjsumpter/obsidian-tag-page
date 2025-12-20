@@ -2,16 +2,16 @@
 
 ## Overview
 
-The Obsidian Tag Page Plugin enables users to create and manage dedicated Markdown pages for individual tags. When you create a tag page, the plugin automatically populates it with content based on the associated tag. The plugin also provides a ribbon icon that refreshes the content of the active tag page according to the current settings.
+The Obsidian Tag Page Plugin enables users to create and manage dedicated Markdown pages for individual tags. Tag content is rendered inline through a markdown code block so you can mix generated results with your own notes.
 
 ## Features
 
-- Create dedicated tag pages with a simple command.
-- Automatically populate tag pages with relevant content.
-- Refresh tag page content with a click.
-- Customize the directory where tag pages are stored.
+- Render tag content anywhere with a `tag-page` code block.
+- Create dedicated tag pages with a simple command that seeds the block for you.
+- Customize the directory where tag pages are stored (for the create command).
 - Include lines containing the tag and/or bulleted sub-items in the tag page.
-- Flexible frontmatter query property to store the tag query within the tag page.
+- Sort, title, and link settings to match your vault’s style.
+- Choose whether reference links appear at the start or end of each pulled line.
 
 ## Installation
 
@@ -23,21 +23,28 @@ To install the Obsidian Tag Page Plugin:
 
 ## Usage
 
+### Tag page code block
+
+Add a `tag-page` code block anywhere in a note to render content for one or more tags:
+
+````markdown
+```tag-page
+tags: #this #that
+```
+````
+
+Your own content above or below the block stays untouched.
+
 ### Commands
 
 - **Create Tag Page**: Trigger this command to create a new tag page or navigate to an existing one.
-  - Entering `#some-tag` will create a new tag page for `#some-tag` in the default tag page directory.
-  - Entering `#some-tag/*` will create a new tag page for all nested tags under `#some-tag` in the default tag page directory.
-
-### Ribbon Icon
-
-- **Refresh Tag Page**: Click this icon to refresh the content of the active tag page based on your current settings.
+  - Entering `#some-tag` will create a new tag page with the code block pre-populated for `#some-tag` in the default tag page directory.
+  - Entering `#some-tag/*` will create a new tag page scoped to nested tags under `#some-tag` in the default tag page directory.
+  - The generated page includes a `tag-page` block so you can keep additional notes around it.
 
 ### Settings
 
 - **Tag Page Directory**: Customize the directory where new tag pages will be created.
-- **Frontmatter Query Property**: Define the frontmatter property to store the tag query within the tag page. 
-  - **NOTE: This property is required on all tag pages for refreshing content.**
 - **Sort By Date**: Sorts content by creation date. Defaults to descending (newest content first)
 - **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
    - _Example_: `mytag_nested.md`
@@ -48,6 +55,7 @@ To install the Obsidian Tag Page Plugin:
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
 - **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
+- **Link position**: Place the reference link at the start or end of each pulled line.
 
 ## Development
 

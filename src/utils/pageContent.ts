@@ -1,4 +1,4 @@
-import { App, MarkdownView } from 'obsidian';
+import { App } from 'obsidian';
 import { PluginSettings, TagInfo } from '../types';
 import { getIsWildCard } from './tagSearch';
 
@@ -16,7 +16,7 @@ export type GenerateTagPageContentFn = (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string,
+	tagOfInterest: string
 ) => Promise<string>;
 
 /**
@@ -32,13 +32,11 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string,
+	tagOfInterest: string
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
-	tagPageContent.push(
-		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
-	);
+
 	// Resolve the title and push to the page content
 	tagPageContent.push(resolveTagPageTitle(settings, tagOfInterest));
 
@@ -57,7 +55,12 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 
 			// Process each tagMatch detail in this group
 			details.forEach(({ stringContainingTag, fileLink }) => {
-				processTagMatch(stringContainingTag, fileLink, tagPageContent);
+				processTagMatch(
+					stringContainingTag,
+					fileLink,
+					tagPageContent,
+					settings.linkAtEnd,
+				);
 			});
 		});
 	} else {
@@ -65,7 +68,12 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		tagsInfo.forEach((details) => {
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				// Assuming there's only one baseTag, we can directly use the first (and only) key of groupedTags
-				processTagMatch(stringContainingTag, fileLink, tagPageContent);
+				processTagMatch(
+					stringContainingTag,
+					fileLink,
+					tagPageContent,
+					settings.linkAtEnd,
+				);
 			});
 		});
 	}
@@ -90,32 +98,6 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 };
 
 /**
- * Extracts the value of a frontmatter property from the current view's file.
- *
- * @param {App} app - The Obsidian App instance.
- * @param {MarkdownView} view - The Markdown view to extract frontmatter from.
- * @param {string} frontMatterTag - The frontmatter property to look for.
- * @returns {string | undefined} - The value of the frontmatter property, or undefined if not found.
- */
-export const extractFrontMatterTagValue = (
-	app: App,
-	view: MarkdownView,
-	frontMatterTag: string,
-): string | undefined => {
-	if (view.file) {
-		try {
-			const metaMatter = app.metadataCache.getFileCache(view.file)
-				?.frontmatter;
-
-			return metaMatter?.[frontMatterTag];
-		} catch (err) {
-			console.log(err);
-			return;
-		}
-	}
-};
-
-/**
  * Processes a single tag match, formatting it according to the specified logic and appending it to the provided content array.
  * If the tag match starts with a markdown bullet ('-'), the function formats the first line with the file link and preserves the rest as is.
  * Otherwise, it prefixes the tag match with a markdown bullet, highlights the base tag within the match, and appends the file link.
@@ -128,13 +110,27 @@ function processTagMatch(
 	fullTag: string,
 	fileLink: string,
 	tagPageContent: string[],
+	linkAtEnd: boolean,
 ) {
 	if (fullTag.trim().startsWith('-')) {
 		const [firstBullet, ...bullets] = fullTag.split('\n');
-		const firstBulletWithLink = `${firstBullet} ${fileLink}`;
-		tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
+		const bulletMatch = firstBullet.match(/^(\s*-\s*)(.*)$/);
+		if (linkAtEnd) {
+			const firstBulletWithLink = `${firstBullet} ${fileLink}`;
+			tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
+		} else if (bulletMatch) {
+			const [, prefix, rest] = bulletMatch;
+			const firstLine = `${prefix}${fileLink} ${rest}`.trimEnd();
+			tagPageContent.push([firstLine, ...bullets].join('\n'));
+		} else {
+			const firstLine = `${fileLink} ${firstBullet}`.trimEnd();
+			tagPageContent.push([firstLine, ...bullets].join('\n'));
+		}
 	} else {
-		tagPageContent.push(`- ${fullTag} ${fileLink}`);
+		const content = linkAtEnd
+			? `- ${fullTag} ${fileLink}`
+			: `- ${fileLink} ${fullTag}`;
+		tagPageContent.push(content.trimEnd());
 	}
 }
 
@@ -166,19 +162,6 @@ function matchesTagOfInterest(
 		return normalizedTags.some((tag) => `#${tag}` === tagBase);
 	}
 }
-
-/**
- * Swaps the content of the current page in view with new content.
- *
- * @param {MarkdownView | null} activeLeaf - The active Markdown view leaf.
- * @param {string} newPageContent - The new content to set in the page.
- */
-export const swapPageContent = (
-	activeLeaf: MarkdownView | null,
-	newPageContent: string,
-) => {
-	activeLeaf?.currentMode?.set(newPageContent, true);
-};
 
 /**
  * Generates a filename based on the cleaned tag, wild card status, and settings.
