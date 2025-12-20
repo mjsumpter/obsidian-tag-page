@@ -12,7 +12,6 @@ import { fetchTagData, getIsWildCard } from './src/utils/tagSearch';
 import {
 	generateFilename,
 	generateTagPageContent,
-	resolveTagPageTitle,
 } from './src/utils/pageContent';
 import { PluginSettings, SortOrder } from './src/types';
 
@@ -172,8 +171,6 @@ export default class TagPagePlugin extends Plugin {
 
 	private buildTagPageTemplate(tagOfInterest: string): string {
 		const lines: string[] = [
-			resolveTagPageTitle(this.settings, tagOfInterest),
-			'',
 			'```tag-page',
 			`tags: ${tagOfInterest}`,
 			'```',
