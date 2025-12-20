@@ -23,6 +23,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
 	bulletedSubItems: true,
 	includeLines: true,
 	fullLinkName: false,
+	linkAtEnd: true,
 };
 
 export default class TagPagePlugin extends Plugin {
@@ -374,6 +375,22 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.fullLinkName)
 					.onChange(async (value) => {
 						this.plugin.settings.fullLinkName = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Link position')
+			.setDesc(
+				'Choose whether the reference link appears at the end (default) or start of each pulled line.',
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('end', 'End of line')
+					.addOption('start', 'Start of line')
+					.setValue(this.plugin.settings.linkAtEnd ? 'end' : 'start')
+					.onChange(async (value) => {
+						this.plugin.settings.linkAtEnd = value === 'end';
 						await this.plugin.saveSettings();
 					}),
 			);

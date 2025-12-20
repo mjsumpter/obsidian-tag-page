@@ -55,7 +55,12 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 
 			// Process each tagMatch detail in this group
 			details.forEach(({ stringContainingTag, fileLink }) => {
-				processTagMatch(stringContainingTag, fileLink, tagPageContent);
+				processTagMatch(
+					stringContainingTag,
+					fileLink,
+					tagPageContent,
+					settings.linkAtEnd,
+				);
 			});
 		});
 	} else {
@@ -63,7 +68,12 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		tagsInfo.forEach((details) => {
 			details.forEach(({ stringContainingTag, fileLink }) => {
 				// Assuming there's only one baseTag, we can directly use the first (and only) key of groupedTags
-				processTagMatch(stringContainingTag, fileLink, tagPageContent);
+				processTagMatch(
+					stringContainingTag,
+					fileLink,
+					tagPageContent,
+					settings.linkAtEnd,
+				);
 			});
 		});
 	}
@@ -100,13 +110,27 @@ function processTagMatch(
 	fullTag: string,
 	fileLink: string,
 	tagPageContent: string[],
+	linkAtEnd: boolean,
 ) {
 	if (fullTag.trim().startsWith('-')) {
 		const [firstBullet, ...bullets] = fullTag.split('\n');
-		const firstBulletWithLink = `${firstBullet} ${fileLink}`;
-		tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
+		const bulletMatch = firstBullet.match(/^(\s*-\s*)(.*)$/);
+		if (linkAtEnd) {
+			const firstBulletWithLink = `${firstBullet} ${fileLink}`;
+			tagPageContent.push([firstBulletWithLink, ...bullets].join('\n'));
+		} else if (bulletMatch) {
+			const [, prefix, rest] = bulletMatch;
+			const firstLine = `${prefix}${fileLink} ${rest}`.trimEnd();
+			tagPageContent.push([firstLine, ...bullets].join('\n'));
+		} else {
+			const firstLine = `${fileLink} ${firstBullet}`.trimEnd();
+			tagPageContent.push([firstLine, ...bullets].join('\n'));
+		}
 	} else {
-		tagPageContent.push(`- ${fullTag} ${fileLink}`);
+		const content = linkAtEnd
+			? `- ${fullTag} ${fileLink}`
+			: `- ${fileLink} ${fullTag}`;
+		tagPageContent.push(content.trimEnd());
 	}
 }
 

@@ -11,6 +11,7 @@ export interface PluginSettings {
 	bulletedSubItems: boolean;
 	includeLines: boolean;
 	fullLinkName: boolean;
+	linkAtEnd: boolean;
 }
 
 export type TagInfo = Map<string, TagMatchDetail[]>;

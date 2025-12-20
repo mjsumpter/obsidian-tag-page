@@ -11,6 +11,7 @@ The Obsidian Tag Page Plugin enables users to create and manage dedicated Markdo
 - Customize the directory where tag pages are stored (for the create command).
 - Include lines containing the tag and/or bulleted sub-items in the tag page.
 - Sort, title, and link settings to match your vault’s style.
+- Choose whether reference links appear at the start or end of each pulled line.
 
 ## Installation
 
@@ -54,6 +55,7 @@ Your own content above or below the block stays untouched.
 - **Include Lines**: Choose to include lines containing the tag in the tag page.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
 - **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
+- **Link position**: Place the reference link at the start or end of each pulled line.
 
 ## Development
 
