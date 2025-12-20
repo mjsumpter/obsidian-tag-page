@@ -69,7 +69,8 @@ export const findSmallestUnitsContainingTag = (
 ): Map<string, string[]> => {
 	const { isWildCard, cleanedTag } = getIsWildCard(tag);
 	const escapedSubstring = cleanedTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const wildcardPattern = isWildCard ? '(?:\\/[^\\s]*)?' : '';
+	// Allow arbitrarily nested segments when searching wildcards (e.g., #tag/a/b/c)
+	const wildcardPattern = isWildCard ? '(?:\\/[\\S]+)*' : '';
 
 	// Filter out bullet points early if excludeBullets is true
 	const contentLines = content
@@ -143,7 +144,7 @@ export const findBulletListsContainingTag = (
 			// Adjusted to use a more inclusive regex pattern for wildcard matches.
 			// Also captures the base tag for wildcard searches.
 			const tagRegex = isWildCard
-				? `${cleanedTag}(/[^\\s]+)?`
+				? `${cleanedTag}(?:/[^\\s]+)*`
 				: `${cleanedTag}(?![^\\s])`;
 			const regex = new RegExp(tagRegex, 'gi');
 			const matches = line.match(regex);
