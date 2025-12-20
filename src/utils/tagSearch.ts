@@ -38,12 +38,14 @@ export const containsTag = (stringToSearch: string, tag: string): boolean => {
 	// Convert both stringToSearch and cleanedTag to the same case
 	const lowerStringToSearch = stringToSearch.toLowerCase();
 	const lowerCleanedTag = cleanedTag.toLowerCase();
+	const escapedTag = lowerCleanedTag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 	if (isWildCard) {
 		return lowerStringToSearch.includes(lowerCleanedTag);
 	} else {
-		// Use 'i' flag in RegExp for case-insensitive matching
-		const regex = new RegExp(`${lowerCleanedTag}\\s`, 'gi');
+		// Match the tag when followed by whitespace, punctuation, or end of line
+		const boundaryLookahead = '(?=$|\\s|[.,;:!?\"\'`<>()\\[\\]{}_-])';
+		const regex = new RegExp(`${escapedTag}${boundaryLookahead}`, 'i');
 		return regex.test(lowerStringToSearch);
 	}
 };
