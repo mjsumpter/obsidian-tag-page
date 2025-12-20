@@ -1,6 +1,5 @@
 import { App, TFile, Vault } from 'obsidian';
 import { PluginSettings, SortOrder, TagInfo } from '../types';
-import { isTagPage } from './obsidianApi';
 
 /**
  * Determines if the given tag contains a wildcard (`/*`) at the end and returns the cleaned tag.
@@ -307,12 +306,12 @@ export const fetchTagData = async (
 	// Search for all pages with this tag
 	const vault = app.vault;
 	const allFiles = vault.getMarkdownFiles();
+	const tagDirPrefix = settings.tagPageDir.endsWith('/')
+		? settings.tagPageDir
+		: `${settings.tagPageDir}/`;
 	return await Promise.all(
 		allFiles
-			.filter(
-				(file) =>
-					!isTagPage(app, settings.frontmatterQueryProperty, file),
-			)
+			.filter((file) => !file.path.startsWith(tagDirPrefix))
 			.map((file) => processFile(vault, settings, file, tagOfInterest)),
 	).then((tagInfos) => {
 		const consolidatedTagInfo: TagInfo = new Map();

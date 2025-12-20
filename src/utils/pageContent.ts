@@ -1,4 +1,4 @@
-import { App, MarkdownView } from 'obsidian';
+import { App } from 'obsidian';
 import { PluginSettings, TagInfo } from '../types';
 import { getIsWildCard } from './tagSearch';
 
@@ -16,7 +16,7 @@ export type GenerateTagPageContentFn = (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string,
+	tagOfInterest: string
 ) => Promise<string>;
 
 /**
@@ -32,13 +32,11 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string,
+	tagOfInterest: string
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
-	tagPageContent.push(
-		`---\n${settings.frontmatterQueryProperty}: "${tagOfInterest}"\n---`,
-	);
+
 	// Resolve the title and push to the page content
 	tagPageContent.push(resolveTagPageTitle(settings, tagOfInterest));
 
@@ -87,32 +85,6 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 		tagPageContent.push(...filesWithFrontmatterTag);
 	}
 	return tagPageContent.join('\n');
-};
-
-/**
- * Extracts the value of a frontmatter property from the current view's file.
- *
- * @param {App} app - The Obsidian App instance.
- * @param {MarkdownView} view - The Markdown view to extract frontmatter from.
- * @param {string} frontMatterTag - The frontmatter property to look for.
- * @returns {string | undefined} - The value of the frontmatter property, or undefined if not found.
- */
-export const extractFrontMatterTagValue = (
-	app: App,
-	view: MarkdownView,
-	frontMatterTag: string,
-): string | undefined => {
-	if (view.file) {
-		try {
-			const metaMatter = app.metadataCache.getFileCache(view.file)
-				?.frontmatter;
-
-			return metaMatter?.[frontMatterTag];
-		} catch (err) {
-			console.log(err);
-			return;
-		}
-	}
 };
 
 /**
@@ -166,19 +138,6 @@ function matchesTagOfInterest(
 		return normalizedTags.some((tag) => `#${tag}` === tagBase);
 	}
 }
-
-/**
- * Swaps the content of the current page in view with new content.
- *
- * @param {MarkdownView | null} activeLeaf - The active Markdown view leaf.
- * @param {string} newPageContent - The new content to set in the page.
- */
-export const swapPageContent = (
-	activeLeaf: MarkdownView | null,
-	newPageContent: string,
-) => {
-	activeLeaf?.currentMode?.set(newPageContent, true);
-};
 
 /**
  * Generates a filename based on the cleaned tag, wild card status, and settings.

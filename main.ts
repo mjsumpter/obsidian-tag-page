@@ -1,6 +1,6 @@
 import {
 	App,
-	MarkdownView,
+	MarkdownRenderer,
 	Modal,
 	normalizePath,
 	Plugin,
@@ -10,44 +10,29 @@ import {
 } from 'obsidian';
 import { fetchTagData, getIsWildCard } from './src/utils/tagSearch';
 import {
-	extractFrontMatterTagValue,
 	generateFilename,
 	generateTagPageContent,
-	swapPageContent,
+	resolveTagPageTitle,
 } from './src/utils/pageContent';
 import { PluginSettings, SortOrder } from './src/types';
-import { isTagPage } from './src/utils/obsidianApi';
 
 const DEFAULT_SETTINGS: PluginSettings = {
 	tagPageDir: 'Tags/',
-	frontmatterQueryProperty: 'tag-page-query',
 	sortByDate: SortOrder.DESC,
 	nestedSeparator: '_',
 	tagPageTitleTemplate: 'Tag Content for {{tag}}',
 	bulletedSubItems: true,
 	includeLines: true,
-	autoRefresh: true,
 	fullLinkName: false,
 };
 
 export default class TagPagePlugin extends Plugin {
 	settings: PluginSettings;
-	ribbonIcon: HTMLElement;
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new TagPageSettingTab(this.app, this));
 
-		this.ribbonIcon = this.addRibbonIcon(
-			'tag-glyph',
-			'Refresh tag page',
-			() => {
-				this.refreshTagPageContent();
-			},
-		);
-		this.ribbonIcon.style.display = 'none';
-
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
 			id: 'create-tag-page',
 			name: 'Create tag page',
@@ -56,40 +41,12 @@ export default class TagPagePlugin extends Plugin {
 			},
 		});
 
-		this.registerEvent(
-			this.app.workspace.on('layout-change', () => {
-				this.updateRibbonIconVisibility();
-				this.autoRefreshTagPage();
-			}),
+		this.registerMarkdownCodeBlockProcessor(
+			'tag-page',
+			(source, el, ctx) => {
+				this.renderTagPageBlock(source, el, ctx.sourcePath);
+			},
 		);
-
-		this.registerEvent(
-			this.app.workspace.on('file-open', () => {
-				this.updateRibbonIconVisibility();
-				this.autoRefreshTagPage();
-			}),
-		);
-
-		this.updateRibbonIconVisibility();
-		await this.autoRefreshTagPage();
-	}
-
-	updateRibbonIconVisibility() {
-		this.ribbonIcon.style.display = isTagPage(
-			this.app,
-			this.settings.frontmatterQueryProperty,
-		)
-			? 'block'
-			: 'none';
-	}
-
-	async autoRefreshTagPage() {
-		if (
-			this.settings.autoRefresh &&
-			isTagPage(this.app, this.settings.frontmatterQueryProperty)
-		) {
-			await this.refreshTagPageContent();
-		}
 	}
 
 	onunload() {}
@@ -104,37 +61,6 @@ export default class TagPagePlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-
-	/**
-	 * Refreshes the content of the active tag page based on the current settings.
-	 *
-	 * @returns {Promise<void>} - A promise that resolves when the operation is complete.
-	 */
-	async refreshTagPageContent(): Promise<void> {
-		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!activeLeaf) return;
-		const tagOfInterest = extractFrontMatterTagValue(
-			this.app,
-			activeLeaf,
-			this.settings.frontmatterQueryProperty,
-		);
-		if (!tagOfInterest) return;
-
-		const tagsInfo = await fetchTagData(
-			this.app,
-			this.settings,
-			tagOfInterest,
-		);
-
-		const tagPageContentString = await generateTagPageContent(
-			this.app,
-			this.settings,
-			tagsInfo,
-			tagOfInterest,
-		);
-
-		swapPageContent(activeLeaf, tagPageContentString);
 	}
 
 	/**
@@ -159,25 +85,17 @@ export default class TagPagePlugin extends Plugin {
 		);
 
 		if (!tagPage) {
-			const tagsInfo = await fetchTagData(
-				this.app,
-				this.settings,
-				tagOfInterest,
-			);
-			const tagPageContentString = await generateTagPageContent(
-				this.app,
-				this.settings,
-				tagsInfo,
-				tagOfInterest,
-			);
-
-			// if tag page doesn't exist, create it and continue
 			const exists = await this.app.vault.adapter.exists(
 				normalizePath(this.settings.tagPageDir),
 			);
 			if (!exists) {
 				await this.app.vault.createFolder(this.settings.tagPageDir);
 			}
+
+			const tagPageContentString = this.buildTagPageTemplate(
+				tagOfInterest,
+			);
+
 			const createdPage = await this.app.vault.create(
 				`${this.settings.tagPageDir}${filename}`,
 				tagPageContentString,
@@ -188,6 +106,99 @@ export default class TagPagePlugin extends Plugin {
 			// navigate to tag page
 			await this.app.workspace.getLeaf().openFile(tagPage as TFile);
 		}
+	}
+
+	/**
+	 * Renders the markdown code block tagged as `tag-page`.
+	 *
+	 * @param source - The content of the code block.
+	 * @param el - The target element for rendering the generated content.
+	 * @param sourcePath - The path of the note containing the block, used to resolve relative links.
+	 */
+	private async renderTagPageBlock(
+		source: string,
+		el: HTMLElement,
+		sourcePath: string,
+	) {
+		const tags = this.parseTagsFromBlock(source);
+		if (tags.length === 0) {
+			el.createEl('p', {
+				text: 'No tags provided. Add `tags: #tag` inside the tag-page code block.',
+			});
+			return;
+		}
+
+		const container = el.createDiv({ cls: 'tag-page-block' });
+
+		for (const tag of tags) {
+			const tagSection = container.createDiv({
+				cls: 'tag-page-block__section',
+			});
+			const loadingState = tagSection.createEl('p', {
+				text: `Loading content for ${tag}...`,
+			});
+			try {
+				const tagsInfo = await fetchTagData(
+					this.app,
+					this.settings,
+					tag,
+				);
+
+				const markdown = await generateTagPageContent(
+					this.app,
+					this.settings,
+					tagsInfo,
+					tag
+				);
+
+				tagSection.empty();
+				await MarkdownRenderer.renderMarkdown(
+					markdown,
+					tagSection,
+					sourcePath,
+					this,
+				);
+			} catch (error) {
+				console.error(error);
+				tagSection.empty();
+				tagSection.createEl('p', {
+					text: `Failed to render tag page for ${tag}.`,
+				});
+			} finally {
+				loadingState.remove();
+			}
+		}
+	}
+
+	private buildTagPageTemplate(tagOfInterest: string): string {
+		const lines: string[] = [
+			resolveTagPageTitle(this.settings, tagOfInterest),
+			'',
+			'```tag-page',
+			`tags: ${tagOfInterest}`,
+			'```',
+			'',
+		];
+
+		return lines.join('\n');
+	}
+
+	private parseTagsFromBlock(source: string): string[] {
+		const tagsLine = source
+			.split('\n')
+			.map((line) => line.trim())
+			.find((line) => line.toLowerCase().startsWith('tags:'));
+
+		if (!tagsLine) return [];
+
+		const tags = tagsLine
+			.slice('tags:'.length)
+			.split(/\s+/)
+			.map((tag) => tag.trim())
+			.filter(Boolean)
+			.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`));
+
+		return Array.from(new Set(tags));
 	}
 }
 
@@ -268,20 +279,6 @@ class TagPageSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-
-		new Setting(containerEl)
-			.setName('Frontmatter query property')
-			.setDesc(
-				'The frontmatter property to use storing the query tag within the tag page. Required for page refresh.',
-			)
-			.addText((text) =>
-				text
-					.setValue(this.plugin.settings.frontmatterQueryProperty)
-					.onChange(async (value) => {
-						this.plugin.settings.frontmatterQueryProperty = value;
-						await this.plugin.saveSettings();
-					}),
-			);
 		new Setting(containerEl)
 			.setName('Sort content by Date')
 			.setDesc(
@@ -345,20 +342,6 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.bulletedSubItems)
 					.onChange(async (value) => {
 						this.plugin.settings.bulletedSubItems = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName('Auto refresh')
-			.setDesc(
-				'Automatically refresh tag pages when they are opened or become active.',
-			)
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.autoRefresh)
-					.onChange(async (value) => {
-						this.plugin.settings.autoRefresh = value;
 						await this.plugin.saveSettings();
 					}),
 			);
