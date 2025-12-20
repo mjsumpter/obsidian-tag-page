@@ -213,10 +213,32 @@ class CreateTagPageModal extends Modal {
 		const tagForm = contentEl.createEl('form');
 		contentEl.addClass('create-page-modal');
 
+		const allTagsRecord =
+			// @ts-ignore - getTags is available at runtime but not in type defs
+			(this.app.metadataCache.getTags?.() as Record<string, number> | undefined) ||
+			{};
+		const existingTags = Object.keys(allTagsRecord).sort((a, b) =>
+			a.localeCompare(b),
+		);
+		const datalistId = 'tag-page-suggestions';
+		if (existingTags.length > 0) {
+			const datalist = contentEl.createEl('datalist', {
+				attr: { id: datalistId },
+			});
+			existingTags.forEach((tag) => {
+				datalist.createEl('option', {
+					attr: { value: tag.startsWith('#') ? tag : `#${tag}` },
+				});
+			});
+		}
+
 		// Input Element
 		const input = tagForm.createEl('input', { type: 'text' });
 		input.placeholder = '#tag';
 		input.value = '#';
+		if (existingTags.length > 0) {
+			input.setAttr('list', datalistId);
+		}
 
 		input.addEventListener('keydown', (e) => {
 			const cursorPosition = input.selectionStart;
