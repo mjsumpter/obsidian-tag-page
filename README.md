@@ -41,6 +41,7 @@ Your own content above or below the block stays untouched.
   - Entering `#some-tag` will create a new tag page with the code block pre-populated for `#some-tag` in the default tag page directory.
   - Entering `#some-tag/*` will create a new tag page scoped to nested tags under `#some-tag` in the default tag page directory.
   - The generated page includes a `tag-page` block so you can keep additional notes around it.
+- **Clean up legacy tag page content**: Removes legacy generated content after migration (anything below the migration marker).
 
 ### Settings
 
@@ -56,6 +57,7 @@ Your own content above or below the block stays untouched.
 - **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
 - **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
 - **Link position**: Place the reference link at the start or end of each pulled line.
+- **Legacy frontmatter key**: The frontmatter key used to detect old tag pages and auto-insert a `tag-page` block.
 
 ## Development
 

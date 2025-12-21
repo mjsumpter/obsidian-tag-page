@@ -2,6 +2,7 @@ import {
 	App,
 	MarkdownRenderer,
 	Modal,
+	Notice,
 	normalizePath,
 	Plugin,
 	PluginSettingTab,
@@ -24,10 +25,14 @@ const DEFAULT_SETTINGS: PluginSettings = {
 	includeLines: true,
 	fullLinkName: false,
 	linkAtEnd: true,
+	legacyFrontmatterQueryProperty: 'tag-page-query',
 };
 
 export default class TagPagePlugin extends Plugin {
 	settings: PluginSettings;
+	private legacyMigrationInProgress = new Set<string>();
+	private static readonly LEGACY_CONTENT_MARKER =
+		'<!-- tag-page-legacy-content -->';
 
 	async onload() {
 		await this.loadSettings();
@@ -40,12 +45,27 @@ export default class TagPagePlugin extends Plugin {
 				new CreateTagPageModal(this.app, this).open();
 			},
 		});
+		this.addCommand({
+			id: 'cleanup-legacy-tag-page',
+			name: 'Clean up legacy tag page content',
+			callback: () => {
+				this.cleanupLegacyTagPageContent();
+			},
+		});
 
 		this.registerMarkdownCodeBlockProcessor(
 			'tag-page',
 			(source, el, ctx) => {
 				this.renderTagPageBlock(source, el, ctx.sourcePath);
 			},
+		);
+
+		this.registerEvent(
+			this.app.workspace.on('file-open', (file) => {
+				if (file) {
+					void this.migrateLegacyTagPage(file);
+				}
+			}),
 		);
 	}
 
@@ -197,6 +217,102 @@ export default class TagPagePlugin extends Plugin {
 			.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`));
 
 		return Array.from(new Set(tags));
+	}
+
+	private getLegacyFrontmatterKey(): string {
+		return this.settings.legacyFrontmatterQueryProperty || 'tag-page-query';
+	}
+
+	private normalizeLegacyTags(rawTags: string | string[]): string[] {
+		const tags = Array.isArray(rawTags)
+			? rawTags
+			: String(rawTags)
+					.split(/[,\s]+/)
+					.filter(Boolean);
+
+		return Array.from(
+			new Set(
+				tags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)),
+			),
+		);
+	}
+
+	private async migrateLegacyTagPage(file: TFile): Promise<void> {
+		const filePath = file.path;
+		if (this.legacyMigrationInProgress.has(filePath)) return;
+
+		const legacyKey = this.getLegacyFrontmatterKey();
+		const frontmatterValue =
+			this.app.metadataCache.getFileCache(file)?.frontmatter?.[legacyKey];
+		if (!frontmatterValue) return;
+
+		try {
+			this.legacyMigrationInProgress.add(filePath);
+			const content = await this.app.vault.read(file);
+
+			if (
+				/```tag-page[\s\S]*?```/i.test(content) ||
+				content.includes(TagPagePlugin.LEGACY_CONTENT_MARKER)
+			) {
+				return;
+			}
+
+			const tags = this.normalizeLegacyTags(frontmatterValue);
+			if (tags.length === 0) return;
+
+			const block = [
+				'```tag-page',
+				`tags: ${tags.join(' ')}`,
+				'```',
+				'',
+			].join('\n');
+
+			const frontmatterMatch = content.match(
+				/^---\n[\s\S]*?\n---\n?/,
+			);
+			const nextContent = frontmatterMatch
+				? content.replace(
+						frontmatterMatch[0],
+						`${frontmatterMatch[0]}\n${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n`,
+					)
+				: `${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n${content}`;
+
+			await this.app.vault.modify(file, nextContent);
+			await this.maybeShowLegacyMigrationNotice();
+		} finally {
+			this.legacyMigrationInProgress.delete(filePath);
+		}
+	}
+
+	private async cleanupLegacyTagPageContent(): Promise<void> {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			new Notice('Tag Page: no active file to clean up.');
+			return;
+		}
+
+		const content = await this.app.vault.read(activeFile);
+		const markerIndex = content.indexOf(
+			TagPagePlugin.LEGACY_CONTENT_MARKER,
+		);
+
+		if (markerIndex === -1) {
+			new Notice('Tag Page: no legacy marker found in this note.');
+			return;
+		}
+
+		const nextContent = content
+			.slice(0, markerIndex)
+			.replace(/\s*$/, '\n');
+
+		await this.app.vault.modify(activeFile, nextContent);
+		new Notice('Tag Page: legacy content removed.');
+	}
+
+	private async maybeShowLegacyMigrationNotice(): Promise<void> {
+		new Notice(
+			'Tag Page: added a tag-page code block to migrate this note. Run "Clean up legacy tag page content" when ready.',
+		);
 	}
 }
 
@@ -375,6 +491,21 @@ class TagPageSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.fullLinkName)
 					.onChange(async (value) => {
 						this.plugin.settings.fullLinkName = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName('Legacy frontmatter key')
+			.setDesc(
+				'Used to detect old tag pages and auto-insert a tag-page block for migration.',
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder('tag-page-query')
+					.setValue(this.plugin.settings.legacyFrontmatterQueryProperty || '')
+					.onChange(async (value) => {
+						this.plugin.settings.legacyFrontmatterQueryProperty = value.trim() || 'tag-page-query';
 						await this.plugin.saveSettings();
 					}),
 			);

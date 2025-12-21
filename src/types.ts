@@ -12,6 +12,7 @@ export interface PluginSettings {
 	includeLines: boolean;
 	fullLinkName: boolean;
 	linkAtEnd: boolean;
+	legacyFrontmatterQueryProperty?: string;
 }
 
 export type TagInfo = Map<string, TagMatchDetail[]>;
