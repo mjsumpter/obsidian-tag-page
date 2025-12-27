@@ -6,12 +6,12 @@ The Obsidian Tag Page Plugin enables users to create and manage dedicated Markdo
 
 ## Features
 
-- Render tag content anywhere with a `tag-page` code block.
-- Create dedicated tag pages with a simple command that seeds the block for you.
-- Customize the directory where tag pages are stored (for the create command).
-- Include lines containing the tag and/or bulleted sub-items in the tag page.
-- Sort, title, and link settings to match your vault’s style.
-- Choose whether reference links appear at the start or end of each pulled line.
+-   Render tag content anywhere with a `tag-page` code block.
+-   Create dedicated tag pages with a simple command that seeds the block for you.
+-   Customize the directory where tag pages are stored (for the create command).
+-   Include lines containing the tag and/or bulleted sub-items in the tag page.
+-   Sort, title, and link settings to match your vault’s style.
+-   Choose whether reference links appear at the start or end of each pulled line.
 
 ## Installation
 
@@ -37,31 +37,31 @@ Your own content above or below the block stays untouched.
 
 ### Commands
 
-- **Create Tag Page**: Trigger this command to create a new tag page or navigate to an existing one.
-  - Entering `#some-tag` will create a new tag page with the code block pre-populated for `#some-tag` in the default tag page directory.
-  - Entering `#some-tag/*` will create a new tag page scoped to nested tags under `#some-tag` in the default tag page directory.
-  - The generated page includes a `tag-page` block so you can keep additional notes around it.
-- **Clean up legacy tag page content**: Removes legacy generated content after migration (anything below the migration marker).
+-   **Create Tag Page**: Trigger this command to create a new tag page or navigate to an existing one.
+    -   Entering `#some-tag` will create a new tag page with the code block pre-populated for `#some-tag` in the default tag page directory.
+    -   Entering `#some-tag/*` will create a new tag page scoped to nested tags under `#some-tag` in the default tag page directory.
+    -   The generated page includes a `tag-page` block so you can keep additional notes around it.
+-   **Clean up legacy tag page content**: Removes legacy generated content after migration (anything below the migration marker).
 
 ### Settings
 
-- **Tag Page Directory**: Customize the directory where new tag pages will be created.
-- **Sort By Date**: Sorts content by creation date. Defaults to descending (newest content first)
-- **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
-   - _Example_: `mytag_nested.md`
-- **Tag page title template**: Template for the titles of the tag pages. If left empty, a default title will be generated: `Tag Content for {{tag}}`.There are three (case sensitive) placeholders available:
-   - `{{tag}}`: Will by replaced by the actual tag with a link (e.g. `#Birds`).
-   - `{{tagname}}`: Will be replaced by the tag name without the `#` symbol and without a link (e.g. `Birds` if the tag is `#Birds`).
-   - `{{lf}}`: Will be replaced by a newline (line feed). With this placeholder, you can add spacing or static text between the title and the tags.
-- **Include Lines**: Choose to include lines containing the tag in the tag page.
-- **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
-- **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
-- **Link position**: Place the reference link at the start or end of each pulled line.
-- **Legacy frontmatter key**: The frontmatter key used to detect old tag pages and auto-insert a `tag-page` block.
+-   **Tag Page Directory**: Customize the directory where new tag pages will be created.
+-   **Sort By Date**: Sorts content by creation date. Defaults to descending (newest content first)
+-   **Nested page separator**: Indicate the character used between words when created tag pages. Defaults to `_`.
+    -   _Example_: `mytag_nested.md`
+-   **Tag page title template**: Template for the titles of the tag pages. If left empty, a default title will be generated: `Tag Content for {{tag}}`.There are three (case sensitive) placeholders available:
+    -   `{{tag}}`: Will by replaced by the actual tag with a link (e.g. `#Birds`).
+    -   `{{tagname}}`: Will be replaced by the tag name without the `#` symbol and without a link (e.g. `Birds` if the tag is `#Birds`).
+    -   `{{lf}}`: Will be replaced by a newline (line feed). With this placeholder, you can add spacing or static text between the title and the tags.
+-   **Include Lines**: Choose to include lines containing the tag in the tag page.
+-   **Bulleted Sub Items**: Choose to include bulleted sub-items containing the tag in the tag page.
+-   **Display Full Link Names**: When off, referenced content will end with a link aliased as `*`. When toggled on, it will use the full file name for the link.
+-   **Link position**: Place the reference link at the start or end of each pulled line.
+-   **Legacy frontmatter key**: The frontmatter key used to detect old tag pages and auto-insert a `tag-page` block.
 
 ## Development
 
-To contribute to this project, please see the [Contributing](https://github.com/mjsumpter/obsidian-tag-page/blob/develop/CONTRIBUTING.md) guidelines. 
+To contribute to this project, please see the [Contributing](https://github.com/mjsumpter/obsidian-tag-page/blob/develop/CONTRIBUTING.md) guidelines.
 
 ## Support
 

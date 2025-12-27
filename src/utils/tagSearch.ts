@@ -44,7 +44,7 @@ export const containsTag = (stringToSearch: string, tag: string): boolean => {
 		return lowerStringToSearch.includes(lowerCleanedTag);
 	} else {
 		// Match the tag when followed by whitespace, punctuation, or end of line
-		const boundaryLookahead = '(?=$|\\s|[.,;:!?\"\'`<>()\\[\\]{}_-])';
+		const boundaryLookahead = '(?=$|\\s|[.,;:!?"\'`<>()\\[\\]{}_-])';
 		const regex = new RegExp(`${escapedTag}${boundaryLookahead}`, 'i');
 		return regex.test(lowerStringToSearch);
 	}
@@ -207,7 +207,7 @@ export const findBulletListsContainingTag = (
  * @returns {TagInfo} A map of tags to arrays of TagMatchDetail objects.
  */
 function consolidateTagInfo(
-	fileInfo: { fileLink: string; timestamp: number },
+	fileInfo: { fileLink: string; timestamp: number; sourcePath: string },
 	unitsContainingTag?: Map<string, string[]>,
 	bulletListsContainingTag?: Map<string, string[]>,
 ): TagInfo {
@@ -261,6 +261,7 @@ export const processFile = async (
 	const fileInfo = {
 		fileLink,
 		timestamp: file.stat.ctime,
+		sourcePath: file.path,
 	};
 	switch (true) {
 		case settings.bulletedSubItems && settings.includeLines:

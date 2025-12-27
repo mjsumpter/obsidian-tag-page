@@ -1,4 +1,5 @@
-import { App } from 'obsidian';
+import { App, normalizePath } from 'obsidian';
+import * as path from 'path';
 import { PluginSettings, TagInfo } from '../types';
 import { getIsWildCard } from './tagSearch';
 
@@ -16,7 +17,7 @@ export type GenerateTagPageContentFn = (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string
+	tagOfInterest: string,
 ) => Promise<string>;
 
 /**
@@ -32,7 +33,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string
+	tagOfInterest: string,
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
@@ -54,25 +55,29 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 			tagPageContent.push(`### ${baseTag}`);
 
 			// Process each tagMatch detail in this group
-			details.forEach(({ stringContainingTag, fileLink }) => {
+			details.forEach(({ stringContainingTag, fileLink, sourcePath }) => {
 				processTagMatch(
 					stringContainingTag,
 					fileLink,
+					sourcePath,
 					tagPageContent,
 					settings.linkAtEnd,
+					app,
 				);
 			});
 		});
 	} else {
 		// If there's only one baseTag, process all tagMatches normally without subheaders
 		tagsInfo.forEach((details) => {
-			details.forEach(({ stringContainingTag, fileLink }) => {
+			details.forEach(({ stringContainingTag, fileLink, sourcePath }) => {
 				// Assuming there's only one baseTag, we can directly use the first (and only) key of groupedTags
 				processTagMatch(
 					stringContainingTag,
 					fileLink,
+					sourcePath,
 					tagPageContent,
 					settings.linkAtEnd,
+					app,
 				);
 			});
 		});
@@ -104,16 +109,27 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
  *
  * @param {string} fullTag - The full tag match string, which may include additional content beyond the base tag.
  * @param {string} fileLink - The URL or path to the file associated with the tag match.
+ * @param {string} sourcePath - The path to the source note, used to resolve relative embeds.
  * @param {string[]} tagPageContent - The array to which the formatted tag match will be appended. This array accumulates the content for a page or section.
+ * @param {boolean} linkAtEnd - Whether to place the file link at the end of the line.
+ * @param {App} app - The Obsidian app instance for link resolution.
  */
 function processTagMatch(
 	fullTag: string,
 	fileLink: string,
+	sourcePath: string,
 	tagPageContent: string[],
 	linkAtEnd: boolean,
+	app: App,
 ) {
-	if (fullTag.trim().startsWith('-')) {
-		const [firstBullet, ...bullets] = fullTag.split('\n');
+	const resolvedTag = resolveRelativeEmbeds(app, sourcePath, fullTag);
+	if (resolvedTag.trim().startsWith('-')) {
+		const [firstBullet, ...bullets] = resolvedTag.split('\n');
+		const firstBulletIndent = firstBullet.match(/^(\s*)-/);
+		if (firstBulletIndent && firstBulletIndent[1].length > 0) {
+			tagPageContent.push(resolvedTag);
+			return;
+		}
 		const bulletMatch = firstBullet.match(/^(\s*-\s*)(.*)$/);
 		if (linkAtEnd) {
 			const firstBulletWithLink = `${firstBullet} ${fileLink}`;
@@ -128,10 +144,67 @@ function processTagMatch(
 		}
 	} else {
 		const content = linkAtEnd
-			? `- ${fullTag} ${fileLink}`
-			: `- ${fileLink} ${fullTag}`;
+			? `- ${resolvedTag} ${fileLink}`
+			: `- ${fileLink} ${resolvedTag}`;
 		tagPageContent.push(content.trimEnd());
 	}
+}
+
+/**
+ * Resolves relative embed targets within tag-matched lines so images render correctly when
+ * the content is rendered from a tag-page block.
+ *
+ * This handles both Obsidian embeds (`![[...]]`) and standard markdown images (`![](...)`),
+ * rewriting their targets to be vault-resolvable based on the source note path.
+ *
+ * @param {App} app - The Obsidian app instance used to resolve internal links.
+ * @param {string} sourcePath - The source note path used as the base for resolution.
+ * @param {string} content - A single line or block of content that may include embeds.
+ * @returns {string} The content with embed targets rewritten when possible.
+ */
+function resolveRelativeEmbeds(
+	app: App,
+	sourcePath: string,
+	content: string,
+): string {
+	const withResolvedWikiEmbeds = content.replace(
+		/!\[\[([^\]]+)\]\]/g,
+		(match, inner) => {
+			// Preserve aliases and subpath suffixes while resolving the target.
+			const [linkTarget, alias] = inner.split('|', 2);
+			const parsed = linkTarget.match(/^([^#^]+)([#^].+)?$/);
+			const baseTarget = parsed?.[1] ?? linkTarget;
+			const suffix = parsed?.[2] ?? '';
+			const resolved = app.metadataCache.getFirstLinkpathDest(
+				baseTarget,
+				sourcePath,
+			);
+			if (!resolved) return match;
+			const resolvedTarget = `${resolved.path}${suffix}`;
+			const aliasSuffix = alias ? `|${alias}` : '';
+			return `![[${resolvedTarget}${aliasSuffix}]]`;
+		},
+	);
+
+	return withResolvedWikiEmbeds.replace(
+		/!\[([^\]]*)\]\(([^)]+)\)/g,
+		(match, altText, rawUrl) => {
+			// Ignore external URLs and anchor-only links.
+			const url = rawUrl.trim().replace(/^<|>$/g, '');
+			if (/^[a-z]+:|^#/i.test(url)) return match;
+			const resolved = app.metadataCache.getFirstLinkpathDest(
+				url,
+				sourcePath,
+			);
+			if (resolved) {
+				return `![${altText}](${resolved.path})`;
+			}
+			// Fall back to a normalized relative path when no file is found.
+			const baseDir = path.posix.dirname(sourcePath);
+			const joined = normalizePath(path.posix.join(baseDir, url));
+			return `![${altText}](${joined})`;
+		},
+	);
 }
 
 /**
@@ -182,7 +255,7 @@ export const generateFilename = (
 };
 
 /**
- * Resolves the title of the tag page according to the defined template in the settings. 
+ * Resolves the title of the tag page according to the defined template in the settings.
  * If empty, the default title will be generated. The template variable {{tag}} will be replaced by the full tag, and {{tagname}} will be replaced just with the tag name. {{lf}} will create new lines.
  * @param {PluginSettings} settings - The plugin settings.
  * @param {string} tagOfInterest - The tag for which the page is being generated.
@@ -197,7 +270,14 @@ export const resolveTagPageTitle = (
 		return `## Tag Content for ${tagOfInterest.replace('*', '')}`;
 	} else {
 		const tag = `${tagOfInterest.replace('*', '')}`;
-		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#','');
-		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', ' ' + tag).replaceAll('{{tagname}}', tagName).replaceAll('  ', ' ');
+		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#', '');
+		return (
+			'## ' +
+			template
+				.replaceAll('{{lf}}', '\n')
+				.replaceAll('{{tag}}', ' ' + tag)
+				.replaceAll('{{tagname}}', tagName)
+				.replaceAll('  ', ' ')
+		);
 	}
-}
+};
