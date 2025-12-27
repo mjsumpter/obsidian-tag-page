@@ -207,7 +207,7 @@ export const findBulletListsContainingTag = (
  * @returns {TagInfo} A map of tags to arrays of TagMatchDetail objects.
  */
 function consolidateTagInfo(
-	fileInfo: { fileLink: string; timestamp: number },
+	fileInfo: { fileLink: string; timestamp: number; sourcePath: string },
 	unitsContainingTag?: Map<string, string[]>,
 	bulletListsContainingTag?: Map<string, string[]>,
 ): TagInfo {
@@ -261,6 +261,7 @@ export const processFile = async (
 	const fileInfo = {
 		fileLink,
 		timestamp: file.stat.ctime,
+		sourcePath: file.path,
 	};
 	switch (true) {
 		case settings.bulletedSubItems && settings.includeLines:

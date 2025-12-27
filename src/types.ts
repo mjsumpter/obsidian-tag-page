@@ -21,4 +21,5 @@ export interface TagMatchDetail {
 	stringContainingTag: string;
 	fileLink: string;
 	timestamp: number; // pulled from TFile.stat.ctime (creation time)
+	sourcePath: string;
 }

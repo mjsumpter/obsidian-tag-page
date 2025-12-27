@@ -171,7 +171,8 @@ export default class TagPagePlugin extends Plugin {
 				);
 
 				tagSection.empty();
-				await MarkdownRenderer.renderMarkdown(
+				await MarkdownRenderer.render(
+					this.app,
 					markdown,
 					tagSection,
 					sourcePath,
@@ -269,7 +270,7 @@ export default class TagPagePlugin extends Plugin {
 				? content.replace(
 						frontmatterMatch[0],
 						`${frontmatterMatch[0]}\n${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n`,
-				  )
+					)
 				: `${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n${content}`;
 
 			await this.app.vault.modify(file, nextContent);
