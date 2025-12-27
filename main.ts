@@ -112,9 +112,8 @@ export default class TagPagePlugin extends Plugin {
 				await this.app.vault.createFolder(this.settings.tagPageDir);
 			}
 
-			const tagPageContentString = this.buildTagPageTemplate(
-				tagOfInterest,
-			);
+			const tagPageContentString =
+				this.buildTagPageTemplate(tagOfInterest);
 
 			const createdPage = await this.app.vault.create(
 				`${this.settings.tagPageDir}${filename}`,
@@ -168,7 +167,7 @@ export default class TagPagePlugin extends Plugin {
 					this.app,
 					this.settings,
 					tagsInfo,
-					tag
+					tag,
 				);
 
 				tagSection.empty();
@@ -231,9 +230,7 @@ export default class TagPagePlugin extends Plugin {
 					.filter(Boolean);
 
 		return Array.from(
-			new Set(
-				tags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`)),
-			),
+			new Set(tags.map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))),
 		);
 	}
 
@@ -267,14 +264,12 @@ export default class TagPagePlugin extends Plugin {
 				'',
 			].join('\n');
 
-			const frontmatterMatch = content.match(
-				/^---\n[\s\S]*?\n---\n?/,
-			);
+			const frontmatterMatch = content.match(/^---\n[\s\S]*?\n---\n?/);
 			const nextContent = frontmatterMatch
 				? content.replace(
 						frontmatterMatch[0],
 						`${frontmatterMatch[0]}\n${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n`,
-					)
+				  )
 				: `${block}${TagPagePlugin.LEGACY_CONTENT_MARKER}\n${content}`;
 
 			await this.app.vault.modify(file, nextContent);
@@ -301,9 +296,7 @@ export default class TagPagePlugin extends Plugin {
 			return;
 		}
 
-		const nextContent = content
-			.slice(0, markerIndex)
-			.replace(/\s*$/, '\n');
+		const nextContent = content.slice(0, markerIndex).replace(/\s*$/, '\n');
 
 		await this.app.vault.modify(activeFile, nextContent);
 		new Notice('Tag Page: legacy content removed.');
@@ -332,8 +325,9 @@ class CreateTagPageModal extends Modal {
 
 		const allTagsRecord =
 			// @ts-ignore - getTags is available at runtime but not in type defs
-			(this.app.metadataCache.getTags?.() as Record<string, number> | undefined) ||
-			{};
+			(this.app.metadataCache.getTags?.() as
+				| Record<string, number>
+				| undefined) || {};
 		const existingTags = Object.keys(allTagsRecord).sort((a, b) =>
 			a.localeCompare(b),
 		);
@@ -446,7 +440,7 @@ class TagPageSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Tag page title template')
 			.setDesc(
-				'Title template for the tag page. The placeholder \'{{tag}}\' will be replaced by the actual tag. The placeholder \'{{tagname}}\' will be replaced by just the tag name (without the \'#\' symbol and without a link). The placeholder \'{{lf}}\' (line feed) is used to add new lines for optional spacing or to insert static text between the title and the tags.'
+				"Title template for the tag page. The placeholder '{{tag}}' will be replaced by the actual tag. The placeholder '{{tagname}}' will be replaced by just the tag name (without the '#' symbol and without a link). The placeholder '{{lf}}' (line feed) is used to add new lines for optional spacing or to insert static text between the title and the tags.",
 			)
 			.addText((text) =>
 				text
@@ -454,7 +448,7 @@ class TagPageSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.tagPageTitleTemplate = value;
 						await this.plugin.saveSettings();
-					})
+					}),
 			);
 		new Setting(containerEl)
 			.setName('Include lines')
@@ -503,9 +497,13 @@ class TagPageSettingTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder('tag-page-query')
-					.setValue(this.plugin.settings.legacyFrontmatterQueryProperty || '')
+					.setValue(
+						this.plugin.settings.legacyFrontmatterQueryProperty ||
+							'',
+					)
 					.onChange(async (value) => {
-						this.plugin.settings.legacyFrontmatterQueryProperty = value.trim() || 'tag-page-query';
+						this.plugin.settings.legacyFrontmatterQueryProperty =
+							value.trim() || 'tag-page-query';
 						await this.plugin.saveSettings();
 					}),
 			);

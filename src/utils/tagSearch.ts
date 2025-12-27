@@ -44,7 +44,7 @@ export const containsTag = (stringToSearch: string, tag: string): boolean => {
 		return lowerStringToSearch.includes(lowerCleanedTag);
 	} else {
 		// Match the tag when followed by whitespace, punctuation, or end of line
-		const boundaryLookahead = '(?=$|\\s|[.,;:!?\"\'`<>()\\[\\]{}_-])';
+		const boundaryLookahead = '(?=$|\\s|[.,;:!?"\'`<>()\\[\\]{}_-])';
 		const regex = new RegExp(`${escapedTag}${boundaryLookahead}`, 'i');
 		return regex.test(lowerStringToSearch);
 	}

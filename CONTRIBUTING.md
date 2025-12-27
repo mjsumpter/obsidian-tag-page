@@ -22,7 +22,7 @@ First off, thank you for considering contributing to this Obsidian repository! W
 
 ## Style Guidelines
 
-- **Commit Messages**: Write clear and meaningful commit messages that describe the change and its purpose.
+-   **Commit Messages**: Write clear and meaningful commit messages that describe the change and its purpose.
 
 ## Review Process
 

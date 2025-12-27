@@ -16,7 +16,7 @@ export type GenerateTagPageContentFn = (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string
+	tagOfInterest: string,
 ) => Promise<string>;
 
 /**
@@ -32,7 +32,7 @@ export const generateTagPageContent: GenerateTagPageContentFn = async (
 	app: App,
 	settings: PluginSettings,
 	tagsInfo: TagInfo,
-	tagOfInterest: string
+	tagOfInterest: string,
 ): Promise<string> => {
 	// Generate list of links to files with this tag
 	const tagPageContent: string[] = [];
@@ -182,7 +182,7 @@ export const generateFilename = (
 };
 
 /**
- * Resolves the title of the tag page according to the defined template in the settings. 
+ * Resolves the title of the tag page according to the defined template in the settings.
  * If empty, the default title will be generated. The template variable {{tag}} will be replaced by the full tag, and {{tagname}} will be replaced just with the tag name. {{lf}} will create new lines.
  * @param {PluginSettings} settings - The plugin settings.
  * @param {string} tagOfInterest - The tag for which the page is being generated.
@@ -197,7 +197,14 @@ export const resolveTagPageTitle = (
 		return `## Tag Content for ${tagOfInterest.replace('*', '')}`;
 	} else {
 		const tag = `${tagOfInterest.replace('*', '')}`;
-		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#','');
-		return  '## ' + template.replaceAll('{{lf}}','\n').replaceAll('{{tag}}', ' ' + tag).replaceAll('{{tagname}}', tagName).replaceAll('  ', ' ');
+		const tagName = `${tagOfInterest.replace('*', '')}`.replace('#', '');
+		return (
+			'## ' +
+			template
+				.replaceAll('{{lf}}', '\n')
+				.replaceAll('{{tag}}', ' ' + tag)
+				.replaceAll('{{tagname}}', tagName)
+				.replaceAll('  ', ' ')
+		);
 	}
-}
+};
