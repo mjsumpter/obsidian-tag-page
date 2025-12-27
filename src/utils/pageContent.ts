@@ -219,7 +219,7 @@ function matchesTagOfInterest(
 	tagOfInterest: string,
 ): boolean {
 	// Normalize tags to an array
-	const normalizedTags = Array.isArray(tags) ? tags : [tags];
+	const normalizedTags = Array.isArray(tags) ? tags : tags.split(' ').map((tag) => tag.trim());
 
 	// Prepare base tag and regex pattern for matching
 	const { isWildCard, cleanedTag: tagBase } = getIsWildCard(tagOfInterest);
