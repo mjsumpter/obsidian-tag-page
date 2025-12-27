@@ -125,6 +125,11 @@ function processTagMatch(
 	const resolvedTag = resolveRelativeEmbeds(app, sourcePath, fullTag);
 	if (resolvedTag.trim().startsWith('-')) {
 		const [firstBullet, ...bullets] = resolvedTag.split('\n');
+		const firstBulletIndent = firstBullet.match(/^(\s*)-/);
+		if (firstBulletIndent && firstBulletIndent[1].length > 0) {
+			tagPageContent.push(resolvedTag);
+			return;
+		}
 		const bulletMatch = firstBullet.match(/^(\s*-\s*)(.*)$/);
 		if (linkAtEnd) {
 			const firstBulletWithLink = `${firstBullet} ${fileLink}`;
